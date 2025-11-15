@@ -17,13 +17,8 @@ export default function Navbar({ onSearchChange }: NavbarProps) {
   };
 
   const menuItems = [
-    { name: 'Best Sellers', href: '#' },
     { name: 'New Arrivals', href: '#' },
-    {
-      name: 'Wall Arts',
-      hasDropdown: true,
-      items: ['Metal Wall Art', 'Canvas Prints', 'Acrylic Wall Art', 'Wooden Art']
-    },
+ 
     {
       name: 'Home Decor & Prayer',
       hasDropdown: true,
@@ -34,11 +29,7 @@ export default function Navbar({ onSearchChange }: NavbarProps) {
       hasDropdown: true,
       items: ['Ramadan Lanterns', 'Moon & Star Decor', 'Ramadan Calendars']
     },
-    {
-      name: 'Shop by Theme',
-      hasDropdown: true,
-      items: ['Ayatul Kursi', 'Bismillah', '99 Names of Allah', 'Kaaba', 'Masjid']
-    }
+   
   ];
 
   return (
@@ -59,7 +50,7 @@ export default function Navbar({ onSearchChange }: NavbarProps) {
 
             <div className="flex-1 flex justify-center lg:justify-start">
               <a href="/" className="text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-gray-900 hover:text-amber-700 transition-colors truncate px-2">
-                Islamic Wall Art
+                Abdulla Islamic Store
               </a>
             </div>
 

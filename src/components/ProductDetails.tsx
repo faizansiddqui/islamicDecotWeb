@@ -5,9 +5,10 @@ import { products } from '../productDetails';
 interface ProductDetailsProps {
   productId: number;
   onClose: () => void;
+  onProductChange?: (newId: number) => void;
 }
 
-export default function ProductDetails({ productId, onClose }: ProductDetailsProps) {
+export default function ProductDetails({ productId, onClose, onProductChange }: ProductDetailsProps) {
   const product = products.find((p) => p.id === productId);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -18,6 +19,16 @@ export default function ProductDetails({ productId, onClose }: ProductDetailsPro
   const relatedProducts = products
     .filter((p) => p.category === product.category && p.id !== product.id)
     .slice(0, 4);
+
+  const handleRelatedClick = (relatedId: number) => {
+    setSelectedImage(0);
+    if (onProductChange) {
+      onProductChange(relatedId);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      onClose();
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto">
@@ -198,10 +209,7 @@ export default function ProductDetails({ productId, onClose }: ProductDetailsPro
                 {relatedProducts.map((relatedProduct) => (
                   <div
                     key={relatedProduct.id}
-                    onClick={() => {
-                      setSelectedImage(0);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
+                    onClick={() => handleRelatedClick(relatedProduct.id)}
                     className="bg-white rounded-xl shadow-md overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1"
                   >
                     <div className="aspect-square overflow-hidden">

@@ -1,13 +1,18 @@
 import { Star } from 'lucide-react';
 
+
 export default function Hero() {
+
+
+  
   return (
     <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white overflow-hidden">
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0 bg-[url('https://i.pinimg.com/736x/5c/8e/f2/5c8ef2a8f8e8f8c8f8c8f8c8f8c8f8.jpg')] bg-cover bg-center"></div>
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-[url('/hero.png')] bg-cover bg-center"></div>
+        <div className="absolute inset-0 bg-black opacity-50"></div>
       </div>
-
-      <div className="relative max-w-7xl mx-auto px-2 xs:px-4 sm:px-6 lg:px-8 py-6 xs:py-8 sm:py-12 lg:py-24">
+      
+        <div className="relative max-w-7xl mx-auto px-2 xs:px-4 sm:px-6 lg:px-8 py-6 xs:py-8 sm:py-12 lg:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 xs:gap-6 sm:gap-8 lg:gap-12 items-center">
           <div className="space-y-2 xs:space-y-3 sm:space-y-4 lg:space-y-6 animate-fadeIn z-10">
             <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 text-yellow-400">
@@ -41,16 +46,17 @@ export default function Hero() {
             </div>
           </div>
 
-          <div className="relative animate-slideIn order-first lg:order-last">
+          <div className="absolute top-0 right-0 hidden md:block animate-slideIn order-first lg:order-last">
             <div className="relative">
               <img
-                src="https://i.pinimg.com/736x/5c/8e/f2/5c8ef2a8f8e8f8c8f8c8f8c8f8c8f8.jpg"
+                src="/hero4.png"
                 alt="Islamic Candleholder"
-                className="w-full h-auto rounded-lg shadow-2xl"
+                className="w-80 rounded-lg"
                 loading="eager"
               />
             </div>
           </div>
+
         </div>
       </div>
     </div>
