@@ -184,7 +184,8 @@ const order = async (req, res) => {
 
 
     if(!userAddess){
-      return res.redirect(`${process.env.FRONTEND_URL}/create-address`)
+      // return res.redirect(`${process.env.FRONTEND_URL}/create-address`)
+      return res.status(400).json({msg:"Address not found"})
       //frontend address create krke dobara ye route hit krega
     }
 
@@ -192,7 +193,6 @@ const order = async (req, res) => {
     
     const payload = {
            order_id: v4(),
-        // name: customer_name,
         user_id: decode_user,
         ...userAddess.dataValues,
         product_id
@@ -296,7 +296,43 @@ const createAddress = async (req, res) => {
   }
 };
 
+const getUserProfile = async(req,res)=>{
+  const {decode_user} = req.body;
+
+  const user_data = await User.findOne({
+    attributes:["email"],
+    where:{id:decode_user},
+    include:[
+      {model:Addresses,
+        attributes:[
+          "FullName","phone1","phone2","state","city","pinCode","address","addressType"
+        ]}
+    ]
+  });
+
+  if(user_data.length){
+    return res.status(400).json({status:false,msg:"No user found"})
+  }
+  res.status(200).json({status:true,data:user_data})
+}
+
+const getOrders = async (req,res)=>{
+  const {decode_user} = req.body;
+  if (!decode_user) {
+    return res.status(400).json({message:"No token provided Login first"})
+  }
+
+  const orders = await Orders.findAll({
+    where:{user_id:decode_user}
+  })
+  console.log(JSON.stringify(orders));
+  res.end();
+  
+}
+
 export {
+  getOrders,
+  getUserProfile,
   getProductByCatagory,
   searchProduct,
   showProduct,

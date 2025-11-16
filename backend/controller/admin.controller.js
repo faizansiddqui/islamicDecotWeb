@@ -55,8 +55,10 @@ const uploadProduct = async (req, res) => {
   const transaction = await connection.transaction();
   try {
     const files = req.files || [];
-    const { name, brand, title, weight, price, description, catagory, sub_Catagory, specification } = req.body;
+    const { name, title, price, description, catagory, specification,selling_price } = req.body;
 
+    console.log(`PRICE:$${Number(price)} selling:${Number(selling_price)}`);
+    
     // parse specs (same as before)
     let specsArr = [];
     if (specification) {
@@ -71,16 +73,20 @@ const uploadProduct = async (req, res) => {
     // Find subcategory
     const result = await Catagories.findOne({
       where: { name: catagory },
-      include: [{
-        model: Products,
-        where: { name: name },
-      }],
+      // include: [{
+      //   model: Products,
+      //   where: { name: name },
+      // }],
     });
 
-    if (!result || !result.subcatagories.length) {
-      return res.status(404).json({ message: "Category or Subcategory not found" });
+    if (!result) {
+      return res.status(404).json({ message: "Category not found" });
     }
-    // const subCatagory_id = result.subcatagories[0].id;
+    const catagory_id = result.id;
+    
+   
+    
+  
 
     // Upload each file to Supabase and collect public URLs
     const uploadedImageUrls = [];
@@ -105,12 +111,12 @@ const uploadProduct = async (req, res) => {
     const newProduct = await Products.create({
       product_id: productId, // <-- use product_id (or `id` if your model uses `id`)
       title,
-      brand,
       name,
-      price,
+      price:Number(price),
       product_image: uploadedImageUrls[0], // optionally set the first image as main/thumbnail
       description,
-      weight,
+      selling_price:Number(selling_price),
+      catagory_id:catagory_id
     }, { transaction });
 
     // Insert specifications (if any) — using product_id consistent with create above
@@ -159,8 +165,16 @@ const getOrders = async (req,res)=>{
     res.status(200).json({status:true,orders:data})
 }
 
+const updateOrderStatus = async(req,res)=>{
+  const {payload} = req.body;
+  if(!payload) return res.status(401).json({Message:"Status not found"})
+}
+
+
+
 export {
   addCatagory,
   uploadProduct,
-  getOrders
+  getOrders,
+  updateOrderStatus
 };

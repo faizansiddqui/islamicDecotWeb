@@ -6,8 +6,8 @@ import { Catagories } from "./catagory.model.js";
 
 const Products = connection.define("Products", {
   product_id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
+    type: DataTypes.STRING,
+    allowNull:false,
     primaryKey: true,
   },
 
@@ -22,7 +22,12 @@ const Products = connection.define("Products", {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  price: {
+  price:{
+    type:DataTypes.FLOAT,
+    allowNull:false
+    
+  },
+  selling_price: {
     type: DataTypes.FLOAT,
     allowNull: false,
   },
@@ -33,6 +38,9 @@ const Products = connection.define("Products", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  // quantity:{
+  //   type:DataTypes.ENUM('In Stock','Out Of Stack'),
+  // },
   catagory_id: {
   type: DataTypes.INTEGER,
   allowNull: false
