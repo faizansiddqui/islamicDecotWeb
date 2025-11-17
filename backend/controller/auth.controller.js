@@ -99,7 +99,7 @@ export const login = async (req, res) => {
          res.cookie("accessToken", AccessToken, { httpOnly: true, maxAge: 15*60*1000 });
       res.cookie("refreshToken", RefreshToken, { httpOnly: true, maxAge: 7*24*60*60*1000 });
 
-     return  res.status(200).json({Message:"Login successful check your cookie"})
+     return  res.status(200).json({Message:"Login successful check your cookie",loginType:"normal"})
 
     }
 
