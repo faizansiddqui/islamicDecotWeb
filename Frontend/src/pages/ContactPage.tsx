@@ -10,7 +10,8 @@ export default function ContactPage({ onBack }: ContactPageProps) {
         name: '',
         email: '',
         subject: '',
-        message: '',
+        message: '', 
+        
     });
     const [submitted, setSubmitted] = useState(false);
 
