@@ -8,21 +8,19 @@ export interface Address {
     state: string;
     pinCode: string;
     addressType: 'home' | 'work';
-    // Legacy fields for backwards compatibility
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    phone?: string;
-    zipCode?: string;
-    country?: string;
+}
+
+export interface UserProfile {
+    email: string;
+    Addresses?: Address[];
 }
 
 export interface ProfileContextType {
-    address: Address | null;
-    addresses: Address[];
+    profile: UserProfile | null;
     isLoading: boolean;
-    saveAddress: (address: Address) => Promise<void>;
-    updateAddress: (address: Address) => Promise<void>;
-    clearAddress: () => void;
+    error: string | null;
     fetchProfile: () => Promise<void>;
+    updateProfile: (data: Partial<UserProfile>) => Promise<void>;
+    updateAddress: (address: Address) => Promise<void>;
+    createAddress: (address: Omit<Address, 'id'>) => Promise<void>;
 }

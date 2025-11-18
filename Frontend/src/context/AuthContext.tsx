@@ -19,32 +19,46 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+    console.log('🔵 AuthContext: AuthProvider mounted');
+
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    console.log('🔵 AuthContext: Initial state - user:', user, 'isLoading:', isLoading);
+
     useEffect(() => {
+        console.log('🔄 AuthContext: useEffect triggered');
         // Check if user is authenticated by checking cookies
         checkAuth();
     }, []);
 
     const checkAuth = async () => {
+        console.log('🔵 AuthContext: checkAuth called');
+
         try {
             // Check if user info is stored in localStorage
             const savedUser = localStorage.getItem('user');
             const isAuth = localStorage.getItem('isAuthenticated');
 
+            console.log('🔵 AuthContext: localStorage check - savedUser:', savedUser, 'isAuth:', isAuth);
+
             if (savedUser && isAuth === 'true') {
                 try {
                     const userData = JSON.parse(savedUser);
+                    console.log('✅ AuthContext: User data found in localStorage:', userData);
                     setUser(userData);
-                } catch {
+                } catch (parseError) {
+                    console.error('❌ AuthContext: Failed to parse user data from localStorage', parseError);
                     localStorage.removeItem('user');
                     localStorage.removeItem('isAuthenticated');
                 }
+            } else {
+                console.log('⚠️ AuthContext: No user data found in localStorage');
             }
         } catch (error) {
-            console.error('Auth check failed:', error);
+            console.error('❌ AuthContext: Auth check failed:', error);
         } finally {
+            console.log('🏁 AuthContext: Setting isLoading to false');
             setIsLoading(false);
         }
     };
@@ -178,7 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = () => {
-        console.log('🔴 Logging out user');
+        console.log('🔴 AuthContext: Logging out user');
         setUser(null);
         localStorage.removeItem('user');
         localStorage.removeItem('authToken');
@@ -186,15 +200,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Try to call logout endpoint if it exists
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+        console.log('🔵 AuthContext: Calling logout endpoint at:', `${apiUrl}/api/auth/logout`);
+
         fetch(`${apiUrl}/api/auth/logout`, {
             method: 'POST',
             credentials: 'include',
-        }).catch(() => {
+        }).catch((error) => {
             // Logout endpoint may not exist, that's okay
-            console.log('⚠️ Logout endpoint not available');
+            console.log('⚠️ AuthContext: Logout endpoint not available or failed:', error);
         });
 
         // Redirect to home page using navigateTo
+        console.log('🔵 AuthContext: Redirecting to home page');
         window.history.pushState({}, '', '/');
         window.dispatchEvent(new PopStateEvent('popstate'));
     };
@@ -211,7 +228,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 logout,
             }}
         >
-            {children}
+            <>
+                {console.log('🔵 AuthContext: Provider rendering - isAuthenticated:', !!user, 'user:', user, 'isLoading:', isLoading)}
+                {children}
+            </>
         </AuthContext.Provider>
     );
 }

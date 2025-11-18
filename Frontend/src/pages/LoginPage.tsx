@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Mail, ArrowRight, CheckCircle } from 'lucide-react';
+import { Mail, ArrowRight, CheckCircle, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { navigateTo } from '../utils/navigation';
 
@@ -94,6 +94,21 @@ export default function LoginPage({ onBack }: LoginPageProps) {
     setSuccess('');
   };
 
+  const handleResendEmail = async () => {
+    setError('');
+    setSuccess('');
+    setIsLoading(true);
+    try {
+      await login(email);
+      setSuccess('Verification email resent! Please check your inbox.');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || 'Failed to resend email. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full">
@@ -174,14 +189,34 @@ export default function LoginPage({ onBack }: LoginPageProps) {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleBackToEmail}
-                disabled={isLoading}
-                className="w-full border-2 border-gray-300 hover:border-gray-400 text-gray-700 py-3 rounded-lg font-semibold transition-colors"
-              >
-                Use a different email
-              </button>
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={handleResendEmail}
+                  disabled={isLoading}
+                  className="w-full bg-amber-700 hover:bg-amber-800 disabled:bg-gray-400 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      Resending...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw size={18} />
+                      Resend Email
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBackToEmail}
+                  disabled={isLoading}
+                  className="w-full border-2 border-gray-300 hover:border-gray-400 text-gray-700 py-3 rounded-lg font-semibold transition-colors"
+                >
+                  Use a different email
+                </button>
+              </div>
             </div>
           )}
 

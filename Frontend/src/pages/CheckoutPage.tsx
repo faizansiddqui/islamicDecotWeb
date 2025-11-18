@@ -18,11 +18,11 @@ type PaymentMethod = 'credit' | 'debit' | 'paypal' | 'cod' | 'bank';
 
 export default function CheckoutPage({ onBack }: CheckoutPageProps) {
   const { cartItems, getTotalPrice, clearCart } = useCart();
-  const { address: savedAddress, saveAddress, updateAddress } = useProfile();
+  const { profile } = useProfile();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
-  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [isEditingAddress, setIsEditingAddress] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('credit');
 
   // Redirect to login if not authenticated
@@ -60,24 +60,25 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
 
   // Load saved address on mount
   useEffect(() => {
-    if (savedAddress) {
+    if (profile?.Addresses && profile.Addresses.length > 0) {
+      const address = profile.Addresses[0];
       setFormData((prev) => ({
         ...prev,
-        firstName: savedAddress.firstName || '',
-        lastName: savedAddress.lastName || '',
-        email: savedAddress.email || '',
-        phone: savedAddress.phone || '',
-        address: savedAddress.address,
-        city: savedAddress.city,
-        state: savedAddress.state,
-        zipCode: savedAddress.zipCode || '',
-        country: savedAddress.country || '',
+        firstName: address.FullName.split(' ')[0] || '',
+        lastName: address.FullName.split(' ').slice(1).join(' ') || '',
+        email: profile.email || '',
+        phone: address.phone1 || '',
+        address: address.address || '',
+        city: address.city || '',
+        state: address.state || '',
+        zipCode: address.pinCode || '',
+        country: '',
       }));
       setIsEditingAddress(false);
     } else {
       setIsEditingAddress(true);
     }
-  }, [savedAddress]);
+  }, [profile]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -88,31 +89,8 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
   };
 
   const handleSaveAddress = () => {
-    // Map checkout form fields to backend Address structure
-    const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
-    const addressData = {
-      FullName: fullName,
-      phone1: formData.phone,
-      phone2: '', // Optional alternative phone
-      address: formData.address,
-      city: formData.city,
-      state: formData.state,
-      pinCode: formData.zipCode,
-      addressType: 'home' as const,
-      // Include legacy fields for checkout compatibility
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-      phone: formData.phone,
-      zipCode: formData.zipCode,
-      country: formData.country,
-    };
-
-    if (savedAddress) {
-      updateAddress(addressData);
-    } else {
-      saveAddress(addressData);
-    }
+    // In a real app, this would save to backend using profile context
+    // For now, just set editing to false
     setIsEditingAddress(false);
   };
 
@@ -122,18 +100,20 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
 
   const handleCancelEdit = () => {
     setIsEditingAddress(false);
-    if (savedAddress) {
+    // Reset to saved address if available
+    if (profile?.Addresses && profile.Addresses.length > 0) {
+      const address = profile.Addresses[0];
       setFormData((prev) => ({
         ...prev,
-        firstName: savedAddress.firstName || '',
-        lastName: savedAddress.lastName || '',
-        email: savedAddress.email || '',
-        phone: savedAddress.phone || '',
-        address: savedAddress.address,
-        city: savedAddress.city,
-        state: savedAddress.state,
-        zipCode: savedAddress.zipCode || '',
-        country: savedAddress.country || '',
+        firstName: address.FullName.split(' ')[0] || '',
+        lastName: address.FullName.split(' ').slice(1).join(' ') || '',
+        email: profile.email || '',
+        phone: address.phone1 || '',
+        address: address.address || '',
+        city: address.city || '',
+        state: address.state || '',
+        zipCode: address.pinCode || '',
+        country: '',
       }));
     }
   };
@@ -295,7 +275,6 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmit} className="space-y-8">
               <ShippingForm
-                savedAddress={savedAddress}
                 isEditingAddress={isEditingAddress}
                 formData={formData}
                 errors={errors}

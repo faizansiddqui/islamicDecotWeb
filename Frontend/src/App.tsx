@@ -13,7 +13,7 @@ import CheckoutPage from './pages/CheckoutPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import MyOrdersPage from './pages/MyOrdersPage';
-
+import WishlistPage from './pages/WishlistPage';
 import SettingsPage from './pages/SettingsPage';
 import CategoryPage from './pages/Category/CategoryPage';
 import ContactPage from './pages/ContactPage';
@@ -22,11 +22,14 @@ import ReturnsPage from './pages/ReturnsPage';
 import FAQPage from './pages/FAQPage';
 import { useAdminAuth } from './context/AdminAuthContext';
 import { navigateTo } from './utils/navigation';
+import AuthCallback from './pages/AuthCallback';
+// import AuthCallback from './pages/AuthCallback';
+
 
 function App() {
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState<'home' | 'admin' | 'cart' | 'checkout' | 'log' | 'verify' | 'profile' | 'orders' | 'settings' | 'categories' | 'contact' | 'shipping' | 'returns' | 'faq'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'admin' | 'cart' | 'checkout' | 'log' | 'verify' | 'profile' | 'orders' | 'settings' | 'categories' | 'contact' | 'shipping' | 'returns' | 'faq' | 'wishlist'>('home');
   const { isAdminLoggedIn, logout: adminLogout } = useAdminAuth();
 
   // Track previous path to detect route changes
@@ -55,6 +58,8 @@ function App() {
 
       if (path === '/admin') {
         setCurrentPage('admin');
+      } else if (path === '/auth/callback') {
+        setCurrentPage('auth-callback');
       } else if (path === '/cart') {
         setCurrentPage('cart');
       } else if (path === '/checkout') {
@@ -67,6 +72,8 @@ function App() {
         setCurrentPage('profile');
       } else if (path === '/orders') {
         setCurrentPage('orders');
+      } else if (path === '/wishlist') {
+        setCurrentPage('wishlist');
 
       } else if (path === '/settings') {
         setCurrentPage('settings');
@@ -115,6 +122,10 @@ function App() {
 
   if (currentPage === 'orders') {
     return <MyOrdersPage onBack={() => navigateTo('/')} />;
+  }
+
+  if (currentPage === 'wishlist') {
+    return <WishlistPage onBack={() => navigateTo('/')} />;
   }
 
 

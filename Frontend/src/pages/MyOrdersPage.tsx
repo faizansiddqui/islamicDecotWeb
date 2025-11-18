@@ -30,13 +30,32 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
   const fetchOrders = async () => {
     try {
       const response = await userAPI.getOrders();
-      setOrders(response.data.orders || []);
+      // Handle the case where backend returns empty response (res.end())
+      if (!response || !response.data) {
+        setOrders([]);
+      } else {
+        // Check if response has orders property or is an array directly
+        if (Array.isArray(response.data)) {
+          setOrders(response.data);
+        } else if (response.data.orders && Array.isArray(response.data.orders)) {
+          setOrders(response.data.orders);
+        } else {
+          setOrders([]);
+        }
+      }
       setError(null);
     } catch (error: unknown) {
-      console.error('Failed to fetch orders:', error);
-      const err = error as { message?: string };
-      const errorMessage = err.message || 'Failed to fetch orders. Please try again.';
-      setError(errorMessage);
+      const err = error as { message?: string; response?: { status: number } };
+
+      // Handle 404 specifically
+      if (err.response && err.response.status === 404) {
+        setError('Order service is currently unavailable. Please try again later.');
+      } else {
+        const errorMessage = err.message || 'Failed to fetch orders. Please try again.';
+        setError(errorMessage);
+      }
+      // Set orders to empty array on error to avoid showing stale data
+      setOrders([]);
     } finally {
       setIsLoading(false);
     }

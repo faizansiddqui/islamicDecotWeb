@@ -1,21 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
-import { User, Mail, Phone, MapPin, Save, Edit2, ArrowLeft } from 'lucide-react';
-
-interface ProfilePageProps {
-  onBack?: () => void;
-}
-
-export default function ProfilePage({ onBack }: ProfilePageProps) {
+import { User, Mail, Phone, MapPin, Save, Edit2, ArrowLeft, CheckCircle } from 'lucide-react';
+export default function ProfilePage() {
+  const { profile, isLoading, error, updateAddress, createAddress } = useProfile();
   const { user } = useAuth();
-  const { address, updateAddress } = useProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<{ phone1?: string; phone2?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
   const [formData, setFormData] = useState({
+    id: 0,
     FullName: '',
     phone1: '',
     phone2: '',
@@ -23,12 +20,20 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
     city: '',
     state: '',
     pinCode: '',
-    addressType: 'home' as 'home' | 'work',
+    addressType: 'home' as 'home' | 'work'
   });
 
+  // Initialize form data from profile
   useEffect(() => {
-    if (address) {
+
+    console.log('🔄 ProfilePage: Profile useEffect triggered');
+    console.log('🔄 ProfilePage: Profile data changed:', profile);
+    if (profile?.Addresses) {
+      const address = profile.Addresses[0];
+      console.log('✅ ProfilePage: Found address data:', address);
+
       setFormData({
+        id: address.id || 0,
         FullName: address.FullName || '',
         phone1: address.phone1 || '',
         phone2: address.phone2 || '',
@@ -38,12 +43,64 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
         pinCode: address.pinCode || '',
         addressType: address.addressType || 'home',
       });
+      console.log('✅ ProfilePage: Form data initialized');
+    } else {
+      console.log('⚠️ ProfilePage: No address data found in profile');
     }
-  }, [address]);
+  }, [profile]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear field error when user starts typing
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.FullName.trim()) {
+      errors.FullName = 'Full name is required';
+    }
+
+    if (!formData.phone1.trim()) {
+      errors.phone1 = 'Primary phone is required';
+    } else if (!/^\d{10}$/.test(formData.phone1)) {
+      errors.phone1 = 'Phone must be exactly 10 digits';
+    }
+
+    if (formData.phone2 && !/^\d{10}$/.test(formData.phone2)) {
+      errors.phone2 = 'Alternative phone must be exactly 10 digits';
+    }
+
+    if (!formData.address.trim()) {
+      errors.address = 'Address is required';
+    } else if (formData.address.length < 8) {
+      errors.address = 'Address must be at least 8 characters';
+    }
+
+    if (!formData.city.trim()) {
+      errors.city = 'City is required';
+    }
+
+    if (!formData.state.trim()) {
+      errors.state = 'State is required';
+    }
+
+    if (!formData.pinCode.trim()) {
+      errors.pinCode = 'Pin code is required';
+    } else if (!/^\d{6}$/.test(formData.pinCode)) {
+      errors.pinCode = 'Pin code must be exactly 6 digits';
+    }
+
+    return errors;
   };
 
   const handleSave = async () => {
@@ -58,65 +115,90 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
       return;
     }
 
-    const validations = [
-      { check: !formData.FullName || !formData.phone1 || !formData.address || !formData.city || !formData.state || !formData.pinCode, msg: '⚠️ Please fill in all required fields.' },
-      { check: formData.phone1.length !== 10 || !/^\d{10}$/.test(formData.phone1), msg: '⚠️ Primary phone must be exactly 10 digits (numbers only).' },
-      { check: formData.phone2 && (formData.phone2.length !== 10 || !/^\d{10}$/.test(formData.phone2)), msg: '⚠️ Alternative phone must be exactly 10 digits (numbers only).' },
-      { check: formData.pinCode.length !== 6 || !/^\d{6}$/.test(formData.pinCode), msg: '⚠️ Pin code must be exactly 6 digits.' },
-      { check: formData.address.length < 8, msg: '⚠️ Address must be at least 8 characters.' },
-    ];
-
-    for (const validation of validations) {
-      if (validation.check) {
-        setErrorMessage(validation.msg);
-        setIsSaving(false);
-        return;
-      }
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setErrorMessage('⚠️ Please fix the errors below.');
+      setIsSaving(false);
+      return;
     }
 
     try {
-      const addressData = {
-        id: address?.id,
-        FullName: formData.FullName,
-        phone1: formData.phone1,
-        phone2: formData.phone2,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        pinCode: formData.pinCode,
-        addressType: formData.addressType,
-      };
-      console.log('💾 Attempting to save address:', addressData);
-      await updateAddress(addressData);
+      if (formData.id) {
+        // Update existing address
+        await updateAddress({
+          id: formData.id,
+          FullName: formData.FullName,
+          phone1: formData.phone1,
+          phone2: formData.phone2,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          pinCode: formData.pinCode,
+          addressType: formData.addressType,
+        });
+      } else {
+        // Create new address
+        await createAddress({
+          FullName: formData.FullName,
+          phone1: formData.phone1,
+          phone2: formData.phone2,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          pinCode: formData.pinCode,
+          addressType: formData.addressType,
+        });
+      }
+
       setIsEditing(false);
       setSuccessMessage('✅ Profile saved successfully!');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('Failed to save profile:', error);
       const errorMsg = error instanceof Error ? error.message : 'Failed to save profile. Please try again.';
-
-      // Check if error is about duplicate/existing phone numbers
-      if (errorMsg.toLowerCase().includes('exist') ||
-        errorMsg.toLowerCase().includes('duplicate') ||
-        errorMsg.toLowerCase().includes('already') ||
-        errorMsg.toLowerCase().includes('registered')) {
-        setFieldErrors({ phone1: 'This number is already registered' });
-        setErrorMessage('❌ Phone number already exists. Please use a different number.');
-      } else {
-        setErrorMessage('❌ ' + errorMsg);
-      }
+      setErrorMessage('❌ ' + errorMsg);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleBack = () => {
-    if (onBack) {
-      onBack();
-    } else {
-      window.location.hash = '';
-    }
+    window.location.hash = '';
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-700 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-md p-8">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-red-600 text-2xl">⚠️</span>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Profile</h3>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-amber-700 text-white rounded-lg hover:bg-amber-800 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -168,8 +250,11 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
                   value={formData.FullName}
                   onChange={handleInputChange}
                   disabled={!isEditing}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none disabled:bg-gray-100"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none ${fieldErrors.FullName ? 'border-red-500' : 'border-gray-300'} ${!isEditing ? 'bg-gray-100' : ''}`}
                 />
+                {fieldErrors.FullName && (
+                  <p className="text-xs text-red-600 mt-1 font-medium">⚠️ {fieldErrors.FullName}</p>
+                )}
               </div>
 
               <div>
@@ -177,13 +262,19 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
                   <Mail size={16} />
                   Email
                 </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={user?.email || ''}
-                  disabled
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100"
-                />
+                <div className="relative">
+                  <input
+                    type="email"
+                    name="email"
+                    value={profile?.email || user?.email || ''}
+                    disabled
+                    className="w-full px-4 py-2 pr-24 border border-gray-300 rounded-lg bg-gray-100 text-gray-700"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded">
+                    <CheckCircle size={16} className="text-emerald-600" />
+                    <span className="text-xs font-medium text-emerald-600">Verified</span>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -199,7 +290,7 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
                   disabled={!isEditing}
                   placeholder="10 digits (e.g., 9876543210)"
                   maxLength={10}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none disabled:bg-gray-100 ${fieldErrors.phone1 ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none ${fieldErrors.phone1 ? 'border-red-500' : 'border-gray-300'} ${!isEditing ? 'bg-gray-100' : ''}`}
                 />
                 {fieldErrors.phone1 ? (
                   <p className="text-xs text-red-600 mt-1 font-medium">⚠️ {fieldErrors.phone1}</p>
@@ -221,7 +312,7 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
                   disabled={!isEditing}
                   placeholder="10 digits (e.g., 9876543210)"
                   maxLength={10}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none disabled:bg-gray-100 ${fieldErrors.phone2 ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none ${fieldErrors.phone2 ? 'border-red-500' : 'border-gray-300'} ${!isEditing ? 'bg-gray-100' : ''}`}
                 />
                 {fieldErrors.phone2 ? (
                   <p className="text-xs text-red-600 mt-1 font-medium">⚠️ {fieldErrors.phone2}</p>
@@ -242,9 +333,13 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
                   onChange={handleInputChange}
                   disabled={!isEditing}
                   placeholder="At least 8 characters"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none disabled:bg-gray-100"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none ${fieldErrors.address ? 'border-red-500' : 'border-gray-300'} ${!isEditing ? 'bg-gray-100' : ''}`}
                 />
-                <p className="text-xs text-gray-500 mt-1">Minimum 8 characters required</p>
+                {fieldErrors.address ? (
+                  <p className="text-xs text-red-600 mt-1 font-medium">⚠️ {fieldErrors.address}</p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-1">Minimum 8 characters required</p>
+                )}
               </div>
 
               <div>
@@ -257,8 +352,11 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
                   value={formData.city}
                   onChange={handleInputChange}
                   disabled={!isEditing}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none disabled:bg-gray-100"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none ${fieldErrors.city ? 'border-red-500' : 'border-gray-300'} ${!isEditing ? 'bg-gray-100' : ''}`}
                 />
+                {fieldErrors.city && (
+                  <p className="text-xs text-red-600 mt-1 font-medium">⚠️ {fieldErrors.city}</p>
+                )}
               </div>
 
               <div>
@@ -271,8 +369,11 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
                   value={formData.state}
                   onChange={handleInputChange}
                   disabled={!isEditing}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none disabled:bg-gray-100"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none ${fieldErrors.state ? 'border-red-500' : 'border-gray-300'} ${!isEditing ? 'bg-gray-100' : ''}`}
                 />
+                {fieldErrors.state && (
+                  <p className="text-xs text-red-600 mt-1 font-medium">⚠️ {fieldErrors.state}</p>
+                )}
               </div>
 
               <div>
@@ -287,9 +388,13 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
                   disabled={!isEditing}
                   placeholder="6 digits (e.g., 110001)"
                   maxLength={6}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none disabled:bg-gray-100"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none ${fieldErrors.pinCode ? 'border-red-500' : 'border-gray-300'} ${!isEditing ? 'bg-gray-100' : ''}`}
                 />
-                <p className="text-xs text-gray-500 mt-1">Must be exactly 6 digits</p>
+                {fieldErrors.pinCode ? (
+                  <p className="text-xs text-red-600 mt-1 font-medium">⚠️ {fieldErrors.pinCode}</p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-1">Must be exactly 6 digits</p>
+                )}
               </div>
 
               <div>
@@ -299,9 +404,9 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
                 <select
                   name="addressType"
                   value={formData.addressType}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, addressType: e.target.value as 'home' | 'work' }))}
+                  onChange={handleInputChange}
                   disabled={!isEditing}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none disabled:bg-gray-100"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none ${!isEditing ? 'bg-gray-100' : ''}`}
                 >
                   <option value="home">Home</option>
                   <option value="work">Work</option>
@@ -322,8 +427,11 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
                 <button
                   onClick={() => {
                     setIsEditing(false);
-                    if (address) {
+                    // Reset form to original values
+                    if (profile?.Addresses && profile.Addresses.length > 0) {
+                      const address = profile.Addresses[0];
                       setFormData({
+                        id: address.id || 0,
                         FullName: address.FullName || '',
                         phone1: address.phone1 || '',
                         phone2: address.phone2 || '',

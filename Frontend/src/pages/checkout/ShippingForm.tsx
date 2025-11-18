@@ -1,8 +1,6 @@
 import { MapPin, User, Mail, Phone, Edit2, Save, X } from 'lucide-react';
-import { Address } from '../../context/types';
 
 interface ShippingFormProps {
-    savedAddress: Address | null;
     isEditingAddress: boolean;
     formData: {
         firstName: string;
@@ -23,7 +21,6 @@ interface ShippingFormProps {
 }
 
 export default function ShippingForm({
-    savedAddress,
     isEditingAddress,
     formData,
     errors,
@@ -39,7 +36,7 @@ export default function ShippingForm({
                     <MapPin className="text-amber-700" size={24} />
                     <h2 className="text-2xl font-bold text-gray-900">Shipping Information</h2>
                 </div>
-                {savedAddress && !isEditingAddress && (
+                {!isEditingAddress && (
                     <button
                         type="button"
                         onClick={onEditAddress}
@@ -51,26 +48,26 @@ export default function ShippingForm({
                 )}
             </div>
 
-            {savedAddress && !isEditingAddress ? (
+            {!isEditingAddress ? (
                 <div className="bg-gray-50 rounded-lg p-6 space-y-3">
                     <div className="flex items-center justify-between">
                         <h3 className="font-semibold text-gray-900 text-lg">
-                            {savedAddress.firstName || ''} {savedAddress.lastName || ''}
+                            {formData.firstName || ''} {formData.lastName || ''}
                         </h3>
                     </div>
-                    <p className="text-gray-600">{savedAddress.address}</p>
+                    <p className="text-gray-600">{formData.address}</p>
                     <p className="text-gray-600">
-                        {savedAddress.city}, {savedAddress.state} {savedAddress.zipCode || ''}
+                        {formData.city}, {formData.state} {formData.zipCode || ''}
                     </p>
-                    <p className="text-gray-600">{savedAddress.country || ''}</p>
+                    <p className="text-gray-600">{formData.country || ''}</p>
                     <div className="pt-3 border-t border-gray-200 space-y-1">
                         <p className="text-gray-600">
                             <Mail size={14} className="inline mr-2" />
-                            {savedAddress.email || ''}
+                            {formData.email || ''}
                         </p>
                         <p className="text-gray-600">
                             <Phone size={14} className="inline mr-2" />
-                            {savedAddress.phone || ''}
+                            {formData.phone || ''}
                         </p>
                     </div>
                 </div>
@@ -253,16 +250,14 @@ export default function ShippingForm({
                             <Save size={18} />
                             Save Address
                         </button>
-                        {savedAddress && (
-                            <button
-                                type="button"
-                                onClick={onCancelEdit}
-                                className="flex items-center gap-2 px-6 py-2 border-2 border-gray-300 hover:border-gray-400 text-gray-700 rounded-lg font-semibold transition-colors"
-                            >
-                                <X size={18} />
-                                Cancel
-                            </button>
-                        )}
+                        <button
+                            type="button"
+                            onClick={onCancelEdit}
+                            className="flex items-center gap-2 px-6 py-2 border-2 border-gray-300 hover:border-gray-400 text-gray-700 rounded-lg font-semibold transition-colors"
+                        >
+                            <X size={18} />
+                            Cancel
+                        </button>
                     </div>
                 </>
             )}
