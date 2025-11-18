@@ -18,9 +18,7 @@ export default function BestSellers({ onProductClick }: BestSellersProps) {
   const loadProducts = async () => {
     setIsLoading(true);
     try {
-      console.log('🔵 Loading products for BestSellers...');
       const response = await productAPI.getProducts();
-      console.log('🟢 Products loaded:', response.data);
 
       if (response.data.status && Array.isArray(response.data.products)) {
         // Filter products created in last 3 days (bestsellers)
@@ -131,12 +129,12 @@ export default function BestSellers({ onProductClick }: BestSellersProps) {
 
                       <div className="flex flex-wrap items-center gap-1 xs:gap-1.5 sm:gap-2 lg:gap-3">
                         <span className="text-sm xs:text-base sm:text-lg lg:text-2xl font-bold text-amber-700">
-                          ₹{displayPrice}
+                          ${displayPrice}
                         </span>
                         {oldPrice && (
                           <>
                             <span className="text-xs xs:text-sm sm:text-base lg:text-lg text-gray-400 line-through">
-                              ₹{oldPrice}
+                              ${oldPrice}
                             </span>
                             <span className="bg-green-100 text-green-700 px-1 xs:px-1.5 sm:px-2 py-0.5 xs:py-1 rounded-full text-[8px] xs:text-[9px] sm:text-xs font-semibold">
                               Save {calculateDiscount(displayPrice, oldPrice)}%
@@ -160,7 +158,7 @@ export default function BestSellers({ onProductClick }: BestSellersProps) {
             </div>
 
             <div className="text-center mt-4 xs:mt-6 sm:mt-8 text-[9px] xs:text-xs sm:text-sm lg:text-base text-gray-600">
-              Free Shipping over ₹500 • 30-Day Returns
+              Free Shipping over $5 • 30-Day Returns
             </div>
           </>
         )}

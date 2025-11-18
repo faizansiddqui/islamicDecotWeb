@@ -73,7 +73,7 @@ export const userAPI = {
         }
         throw error;
     }),
-    saveCart: (cartItems: Array<Record<string, unknown>>) => api.post('/user/cart', { cartItems }).catch((error) => {
+    saveCart: (cartItems: Array<Record<string, unknown>>) => api.post('/user/add-to-cart', { cartItems }).catch((error) => {
         if (error.response?.status === 404) {
             throw new Error('Save cart endpoint not available. Cart saved to localStorage only.');
         }

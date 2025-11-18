@@ -35,10 +35,7 @@ export default function ProductGrid({ onProductClick, searchQuery }: ProductGrid
   const loadProducts = async () => {
     setIsLoading(true);
     try {
-      console.log('🔵 Loading all products...');
       const response = await productAPI.getProducts();
-      console.log('🟢 Products loaded:', response.data);
-      console.log('🔍 First product category check:', response.data.products?.[0]?.Catagory);
 
       if (response.data.status && Array.isArray(response.data.products)) {
         setProducts(response.data.products);
@@ -56,15 +53,13 @@ export default function ProductGrid({ onProductClick, searchQuery }: ProductGrid
   const loadProductsByCategory = async (categoryName: string) => {
     setIsLoading(true);
     try {
-      console.log(`🔵 Loading products for category: ${categoryName}`);
       const response = await productAPI.getProductByCategory(categoryName);
-      console.log('🟢 Category products loaded:', response.data);
+      console.log('Category products loaded:', response.data);
 
       if (response.data.status === 'ok' && response.data.data) {
         const categoryData = response.data.data;
         if (categoryData && categoryData.Products && Array.isArray(categoryData.Products)) {
           setProducts(categoryData.Products);
-          console.log(`✅ Loaded ${categoryData.Products.length} products for ${categoryName}`);
         } else {
           console.warn('⚠️ No products found for category:', categoryName);
           setProducts([]);

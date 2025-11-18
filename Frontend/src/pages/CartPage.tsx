@@ -158,7 +158,7 @@ export default function CartPage({ onBack }: CartPageProps) {
                                                     : 'bg-red-100 text-red-800'
                                                 }`}>
                                                 {productStocks[item.id] >= 1
-                                                    ? `In Stock (${productStocks[item.id]} available)`
+                                                    ? `In Stock`
                                                     : 'Out of Stock'
                                                 }
                                             </div>

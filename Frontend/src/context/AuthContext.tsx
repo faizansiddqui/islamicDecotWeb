@@ -19,33 +19,25 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    console.log('🔵 AuthContext: AuthProvider mounted');
 
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    console.log('🔵 AuthContext: Initial state - user:', user, 'isLoading:', isLoading);
-
     useEffect(() => {
-        console.log('🔄 AuthContext: useEffect triggered');
         // Check if user is authenticated by checking cookies
         checkAuth();
     }, []);
 
     const checkAuth = async () => {
-        console.log('🔵 AuthContext: checkAuth called');
 
         try {
             // Check if user info is stored in localStorage
             const savedUser = localStorage.getItem('user');
             const isAuth = localStorage.getItem('isAuthenticated');
 
-            console.log('🔵 AuthContext: localStorage check - savedUser:', savedUser, 'isAuth:', isAuth);
-
             if (savedUser && isAuth === 'true') {
                 try {
                     const userData = JSON.parse(savedUser);
-                    console.log('✅ AuthContext: User data found in localStorage:', userData);
                     setUser(userData);
                 } catch (parseError) {
                     console.error('❌ AuthContext: Failed to parse user data from localStorage', parseError);
@@ -58,16 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (error) {
             console.error('❌ AuthContext: Auth check failed:', error);
         } finally {
-            console.log('🏁 AuthContext: Setting isLoading to false');
             setIsLoading(false);
         }
     };
 
     const login = async (email: string) => {
         try {
-            console.log('🔵 Sending OTP request for:', email);
             const response = await authAPI.login(email);
-            console.log('🟢 OTP sent, response:', response.data);
+            console.log('OTP sent, response:', response.data);
             // Backend sends OTP to email via Supabase
             // No user data yet, user needs to verify OTP in email
         } catch (error: unknown) {
@@ -80,7 +70,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const verifyEmail = async (token: string) => {
         try {
-            console.log('🔵 Verifying email with Supabase token');
 
             // Decode JWT to get email (without verification for display purposes only)
             const base64Url = token.split('.')[1];
@@ -93,12 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userId = payload.sub || '';
 
             const response = await authAPI.verifyEmail(token);
-            console.log('🟢 Email verification response:', response.data);
+            console.log('Email verification response:', response.data);
 
             // Backend sets httpOnly cookies (accessToken, refreshToken)
             // and returns success message
             if (response.data && response.data.Message) {
-                console.log('✅ Login successful, cookies set');
 
                 // Store user data extracted from token
                 const userData = {
@@ -135,9 +123,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const verifyCode = async (email: string, code: string) => {
         try {
-            console.log('🔵 Verifying code for:', email);
             const response = await authAPI.verifyCode(email, code);
-            console.log('🟢 Verify response:', response.data);
+            console.log('Verify response:', response.data);
 
             // Backend returns user data after successful verification
             if (response.data && response.data.status) {
@@ -147,7 +134,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     email: email
                 };
 
-                console.log('✅ Login successful, user data:', userData);
                 setUser(userData);
                 localStorage.setItem('user', JSON.stringify(userData));
                 localStorage.setItem('authToken', response.data.token || 'authenticated');
@@ -192,7 +178,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = () => {
-        console.log('🔴 AuthContext: Logging out user');
         setUser(null);
         localStorage.removeItem('user');
         localStorage.removeItem('authToken');
@@ -200,7 +185,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Try to call logout endpoint if it exists
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-        console.log('🔵 AuthContext: Calling logout endpoint at:', `${apiUrl}/api/auth/logout`);
 
         fetch(`${apiUrl}/api/auth/logout`, {
             method: 'POST',
@@ -211,7 +195,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
         // Redirect to home page using navigateTo
-        console.log('🔵 AuthContext: Redirecting to home page');
         window.history.pushState({}, '', '/');
         window.dispatchEvent(new PopStateEvent('popstate'));
     };
@@ -229,7 +212,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }}
         >
             <>
-                {console.log('🔵 AuthContext: Provider rendering - isAuthenticated:', !!user, 'user:', user, 'isLoading:', isLoading)}
                 {children}
             </>
         </AuthContext.Provider>

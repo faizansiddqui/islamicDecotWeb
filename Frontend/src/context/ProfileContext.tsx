@@ -3,7 +3,6 @@ import { userAPI } from '../services/api';
 import { useAuth } from './AuthContext';
 import { Address, UserProfile, ProfileContextType } from './types';
 
-console.log('🔵 ProfileContext: Module loaded');
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
@@ -49,7 +48,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await userAPI.getProfile();
-      console.log("Profile response:", response.data);
 
       const raw =
         response.data?.data ||

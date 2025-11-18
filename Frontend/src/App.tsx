@@ -43,14 +43,12 @@ function App() {
 
       // If admin is logged in and navigates to any non-admin route, logout admin
       if (isAdminLoggedIn && path !== '/admin' && path !== '/') {
-        console.log('🔴 Admin navigated to user route, logging out admin...');
         adminLogout();
         // Continue to the user route they wanted to visit
       }
 
       // If admin is logged in and navigates to home
       if (isAdminLoggedIn && previousPath === '/admin' && path === '/') {
-        console.log('🔴 Admin returned to home, logging out admin...');
         adminLogout();
       }
 
