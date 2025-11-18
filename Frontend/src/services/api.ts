@@ -51,15 +51,23 @@ export const authAPI = {
 // User API
 export const userAPI = {
     getProfile: () => {
-        return api.post('/user/get-user-profile');
+        return api.post('/user/get-user-profile',{},{
+            withCredentials:true
+        });
     },
     getOrders: () => {
-        return api.post('/user/get-orders');
+        return api.post('/user/get-orders',{},{
+            withCredentials:true
+        });
     },
     getAddresses: () => {
-        return api.post('/user/get-user-addresess');
+        return api.post('/user/get-user-addresess',{},{
+            withCredentials:true
+        });
     },
-    getCart: () => api.post('/user/get-user-cart').catch((error) => {
+    getCart: () => api.post('/user/get-user-cart',{},{
+            withCredentials:true
+        }).catch((error) => {
         if (error.response?.status === 404) {
             throw new Error('Cart endpoint not available. Using localStorage only.');
         }

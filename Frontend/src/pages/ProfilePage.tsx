@@ -24,30 +24,39 @@ export default function ProfilePage() {
   });
 
   // Initialize form data from profile
-  useEffect(() => {
+ useEffect(() => {
+  console.log('🔄 ProfilePage: Profile useEffect triggered');
+  console.log('🔄 ProfilePage: Profile data changed:', profile);
 
-    console.log('🔄 ProfilePage: Profile useEffect triggered');
-    console.log('🔄 ProfilePage: Profile data changed:', profile);
-    if (profile?.Addresses) {
-      const address = profile.Addresses[0];
-      console.log('✅ ProfilePage: Found address data:', address);
+  // STOP IMMEDIATELY IF PROFILE IS NULL
+  if (!profile) {
+    console.log("⛔ Profile is null");
+    return;
+  }
 
-      setFormData({
-        id: address.id || 0,
-        FullName: address.FullName || '',
-        phone1: address.phone1 || '',
-        phone2: address.phone2 || '',
-        address: address.address || '',
-        city: address.city || '',
-        state: address.state || '',
-        pinCode: address.pinCode || '',
-        addressType: address.addressType || 'home',
-      });
-      console.log('✅ ProfilePage: Form data initialized');
-    } else {
-      console.log('⚠️ ProfilePage: No address data found in profile');
-    }
-  }, [profile]);
+  // STOP IF ADDRESSES IS MISSING OR EMPTY
+  if (!Array.isArray(profile.Addresses) || profile.Addresses.length === 0) {
+    console.log("⚠️ No address found");
+    return;
+  }
+
+  // SAFE NOW — WE KNOW address EXISTS
+  const address = profile.Addresses[0];
+  console.log('✅ Using address:', address);
+
+  setFormData({
+    id: address.id ?? 0,
+    FullName: address.FullName || '',
+    phone1: address.phone1 || '',
+    phone2: address.phone2 || '',
+    address: address.address || '',
+    city: address.city || '',
+    state: address.state || '',
+    pinCode: address.pinCode || '',
+    addressType: address.addressType || 'home',
+  });
+}, [profile]);
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

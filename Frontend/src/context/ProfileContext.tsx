@@ -6,74 +6,84 @@ import { Address, UserProfile, ProfileContextType } from './types';
 console.log('🔵 ProfileContext: Module loaded');
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
-console.log('🔵 ProfileContext: Context created');
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Start with true to show loading initially
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
 
+  // -------------------------------
+  // NORMALIZE BACKEND RESPONSE
+  // -------------------------------
+  const normalizeProfile = (data: any): UserProfile => {
+    return {
+      email: data.email || "",
+      Addresses: Array.isArray(data.Addresses)
+        ? data.Addresses.map((a: any) => ({
+            id: a.id || 0,
+            FullName: a.FullName || "",
+            phone1: a.phone1 || "",
+            phone2: a.phone2 || "",
+            address: a.address || "",
+            city: a.city || "",
+            state: a.state || "",
+            pinCode: a.pinCode || "",
+            addressType: a.addressType || "home",
+        }))
+        : [],
+    };
+  };
+
+  // -------------------------------
+  // FETCH PROFILE
+  // -------------------------------
   const fetchProfile = async () => {
     if (!isAuthenticated) {
       setProfile(null);
       return;
     }
-  
+
     setIsLoading(true);
     setError(null);
-  
+
     try {
       const response = await userAPI.getProfile();
       console.log("Profile response:", response.data);
-  
-      // Accept ANY of these common API shapes
-      const data =
+
+      const raw =
         response.data?.data ||
         response.data?.user ||
         response.data?.profile ||
         response.data;
-  
-      if (!data) {
-        throw new Error("Profile data missing from server");
-      }
-  
-      setProfile(data); // <-- finally sets the profile!
-  
+
+      if (!raw) throw new Error("Profile data missing from server");
+
+      const normalized = normalizeProfile(raw);
+
+      setProfile(normalized);
+
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to fetch profile";
       setError(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  
-
-  const updateProfile = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // Note: There's no direct profile update endpoint in the backend
-      // Profile updates are done through address management
-      await fetchProfile(); // Refresh profile after any changes
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update profile';
-      setError(errorMessage);
-      throw err;
+      setProfile(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const createAddress = async (addressData: Omit<Address, 'id'>) => {
+  // -------------------------------
+  // CREATE ADDRESS
+  // -------------------------------
+  const createAddress = async (addressData: Omit<Address, "id">) => {
     setIsLoading(true);
     setError(null);
+
     try {
       const backendAddress = {
         FullName: addressData.FullName.trim(),
-        phoneNo: addressData.phone1.trim(),
-        alt_Phone: addressData.phone2?.trim() || undefined,
+        phone1: addressData.phone1.trim(),
+        phone2: addressData.phone2?.trim() || null,
         address: addressData.address.trim(),
         city: addressData.city.trim(),
         state: addressData.state.trim(),
@@ -83,29 +93,30 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
       await userAPI.createAddress(backendAddress);
 
-      // Refresh profile to get the new address
       await fetchProfile();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create address';
-      setError(errorMessage);
+      const message = err instanceof Error ? err.message : "Failed to create address";
+      setError(message);
       throw err;
     } finally {
       setIsLoading(false);
     }
   };
 
+  // -------------------------------
+  // UPDATE ADDRESS
+  // -------------------------------
   const updateAddress = async (address: Address) => {
     setIsLoading(true);
     setError(null);
+
     try {
-      if (!address.id) {
-        throw new Error('Address ID is required for update');
-      }
+      if (!address.id) throw new Error("Address ID is required for update");
 
       const backendAddress = {
         FullName: address.FullName.trim(),
-        phoneNo: address.phone1.trim(),
-        alt_Phone: address.phone2?.trim() || undefined,
+        phone1: address.phone1.trim(),
+        phone2: address.phone2?.trim() || null,
         address: address.address.trim(),
         city: address.city.trim(),
         state: address.state.trim(),
@@ -115,23 +126,25 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
       await userAPI.updateAddress(address.id, backendAddress);
 
-      // Refresh profile to get the updated address
       await fetchProfile();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update address';
-      setError(errorMessage);
+      const message = err instanceof Error ? err.message : "Failed to update address";
+      setError(message);
       throw err;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fetch profile on mount and when authentication changes
+  // -------------------------------
+  // RUN ON AUTH CHANGE
+  // -------------------------------
   useEffect(() => {
     if (isAuthenticated) {
       fetchProfile();
     } else {
       setIsLoading(false);
+      setProfile(null);
     }
   }, [isAuthenticated]);
 
@@ -142,7 +155,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         isLoading,
         error,
         fetchProfile,
-        updateProfile,
+        updateProfile: fetchProfile,
         updateAddress,
         createAddress,
       }}
@@ -154,8 +167,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
 export function useProfile() {
   const context = useContext(ProfileContext);
-  if (context === undefined) {
-    throw new Error('useProfile must be used within a ProfileProvider');
-  }
+  if (!context) throw new Error("useProfile must be used within a ProfileProvider");
   return context;
 }

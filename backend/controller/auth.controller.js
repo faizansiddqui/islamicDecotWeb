@@ -106,9 +106,9 @@ export const login = async (req, res) => {
     //IN CASE NEW USER WANTS TO LOGIN
     await supabase.auth.signInWithOtp({
       email: email,
-      // options: {
-      //   emailRedirectTo: "http://localhost:8080/api/auth/verify", // yaha apna callback
-      // },
+      options: {
+        emailRedirectTo: `${process.env.FRONTEND_URL}/api/auth/verify`,
+      },
     });
 
     return res.status(200).json({
