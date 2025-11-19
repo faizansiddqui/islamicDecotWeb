@@ -86,7 +86,7 @@ export const userAPI = {
         throw error;
     }),
     createAddress: async (address: unknown) => await api.post('/user/create-newAddress', address),
-    updateAddress: async (addressId: number, address: unknown) => await api.put(`/user/update-address/${addressId}`, address).catch((error) => {
+    updateAddress: async (addressId: number, address: Record<string, unknown>) => await api.patch('/user/update-user-address', { address_id: addressId, ...address }).catch((error) => {
         if (error.response?.status === 404) {
             throw new Error('Update address endpoint not available.');
         }

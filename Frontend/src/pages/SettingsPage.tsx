@@ -1,10 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { Settings, LogOut, Bell, Shield, Globe, ArrowLeft } from 'lucide-react';
+import { userAPI } from '../services/api';
+import AddressForm from '../components/AddressForm';
+import { Settings, LogOut, Bell, Shield, Globe, ArrowLeft, MapPin, Plus, Edit } from 'lucide-react';
 
 interface SettingsPageProps {
   onBack?: () => void;
+}
+
+interface Address {
+  id: number;
+  FullName: string;
+  phone1: string;
+  phone2: string | null;
+  country: string;
+  state: string;
+  city: string;
+  pinCode: string;
+  address: string;
+  addressType: string;
 }
 
 export default function SettingsPage({ onBack }: SettingsPageProps) {
@@ -12,12 +27,47 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
   const { saveCartToLocalStorage } = useCart();
   const [notifications, setNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+
+  useEffect(() => {
+    loadAddresses();
+  }, []);
+
+  const loadAddresses = async () => {
+    if (!user?.id) return;
+
+    try {
+      setLoadingAddresses(true);
+      const response = await userAPI.getAddresses();
+      if (response.data.status && Array.isArray(response.data.data)) {
+        setAddresses(response.data.data);
+      }
+    } catch (error) {
+      console.error('Failed to load addresses:', error);
+    } finally {
+      setLoadingAddresses(false);
+    }
+  };
 
   const handleLogout = () => {
     // Save cart to localStorage before logout
     saveCartToLocalStorage();
     logout();
     // logout() already redirects to home, so no need to redirect here
+  };
+
+  const handleAddressSubmit = () => {
+    setShowAddressForm(false);
+    setEditingAddress(null);
+    loadAddresses(); // Refresh the address list
+  };
+
+  const handleAddressCancel = () => {
+    setShowAddressForm(false);
+    setEditingAddress(null);
   };
 
   const handleBack = () => {
@@ -137,6 +187,80 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
             </div>
           </div>
 
+          {/* Address Management */}
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <MapPin className="text-amber-700" size={24} />
+                <h2 className="text-2xl font-bold text-gray-900">Address Management</h2>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingAddress(null);
+                  setShowAddressForm(true);
+                }}
+                className="flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                <Plus size={16} />
+                Add Address
+              </button>
+            </div>
+
+            {loadingAddresses ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-700"></div>
+              </div>
+            ) : addresses.length === 0 ? (
+              <div className="text-center py-8">
+                <MapPin size={48} className="mx-auto text-gray-300 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No addresses yet</h3>
+                <p className="text-gray-500 mb-4">Add your first address to get started</p>
+                <button
+                  onClick={() => {
+                    setEditingAddress(null);
+                    setShowAddressForm(true);
+                  }}
+                  className="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                >
+                  Add Address
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {addresses.map((address) => (
+                  <div key={address.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-gray-900">{address.FullName}</h3>
+                          <span className="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full capitalize">
+                            {address.addressType}
+                          </span>
+                        </div>
+
+                        <div className="space-y-1 text-gray-600">
+                          <p>{address.address}, {address.city}, {address.state}, {address.country} - {address.pinCode}</p>
+                          <p>Phone: {address.phone1}{address.phone2 && ` / ${address.phone2}`}</p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setEditingAddress(address);
+                          setShowAddressForm(true);
+                        }}
+                        className="text-amber-700 hover:text-amber-800 font-medium text-sm flex items-center gap-1"
+                      >
+                        <Edit size={16} />
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Logout */}
           <div className="bg-white rounded-xl shadow-md p-6">
             <button
@@ -149,6 +273,14 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
           </div>
         </div>
       </div>
+
+      {showAddressForm && (
+        <AddressForm
+          address={editingAddress || undefined}
+          onSubmit={handleAddressSubmit}
+          onCancel={handleAddressCancel}
+        />
+      )}
     </div>
   );
 }
