@@ -24,38 +24,50 @@ export default function ProfilePage() {
   });
 
   // Initialize form data from profile
- useEffect(() => {
-  console.log('🔄 ProfilePage: Profile useEffect triggered');
-  console.log('🔄 ProfilePage: Profile data changed:', profile);
+  useEffect(() => {
+    console.log('🔄 ProfilePage: Profile useEffect triggered');
+    console.log('🔄 ProfilePage: Profile data changed:', profile);
+    console.log('🔄 ProfilePage: Auth user:', user);
 
-  // STOP IMMEDIATELY IF PROFILE IS NULL
-  if (!profile) {
-    console.log("⛔ Profile is null");
-    return;
-  }
+    // STOP IMMEDIATELY IF PROFILE IS NULL
+    if (!profile) {
+      console.log("⛔ Profile is null");
+      return;
+    }
 
-  // STOP IF ADDRESSES IS MISSING OR EMPTY
-  if (!Array.isArray(profile.Addresses) || profile.Addresses.length === 0) {
-    console.log("⚠️ No address found");
-    return;
-  }
+    // STOP IF ADDRESSES IS MISSING OR EMPTY
+    if (!Array.isArray(profile.Addresses) || profile.Addresses.length === 0) {
+      console.log("⚠️ No address found");
+      // Initialize with empty values but keep email
+      setFormData({
+        id: 0,
+        FullName: '',
+        phone1: '',
+        phone2: '',
+        address: '',
+        city: '',
+        state: '',
+        pinCode: '',
+        addressType: 'home',
+      });
+      return;
+    }
 
-  // SAFE NOW — WE KNOW address EXISTS
-  const address = profile.Addresses[0];
-  console.log('✅ Using address:', address);
+    // SAFE NOW — WE KNOW address EXISTS
+    const address = profile.Addresses[0];
 
-  setFormData({
-    id: address.id ?? 0,
-    FullName: address.FullName || '',
-    phone1: address.phone1 || '',
-    phone2: address.phone2 || '',
-    address: address.address || '',
-    city: address.city || '',
-    state: address.state || '',
-    pinCode: address.pinCode || '',
-    addressType: address.addressType || 'home',
-  });
-}, [profile]);
+    setFormData({
+      id: address.id ?? 0,
+      FullName: address.FullName || '',
+      phone1: address.phone1 || '',
+      phone2: address.phone2 || '',
+      address: address.address || '',
+      city: address.city || '',
+      state: address.state || '',
+      pinCode: address.pinCode || '',
+      addressType: address.addressType || 'home',
+    });
+  }, [profile, user]);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -221,15 +233,24 @@ export default function ProfilePage() {
         </button>
 
         <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
+          {/* Updated heading with verified email and green badge */}
+          <div className="flex flex-col items-center mb-6">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-gray-900">
+                {profile?.email || user?.email || 'User Profile'}
+              </h1>
+              <div className="flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded">
+                <CheckCircle size={16} className="text-emerald-600" />
+                <span className="text-xs font-medium text-emerald-600">Verified</span>
+              </div>
+            </div>
             {!isEditing && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 px-4 py-2 text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
+                className="mt-4 flex items-center gap-2 px-4 py-2 text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
               >
                 <Edit2 size={18} />
-                Edit
+                Edit Profile
               </button>
             )}
           </div>

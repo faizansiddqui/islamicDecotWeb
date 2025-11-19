@@ -51,23 +51,23 @@ export const authAPI = {
 // User API
 export const userAPI = {
     getProfile: () => {
-        return api.post('/user/get-user-profile',{},{
-            withCredentials:true
+        return api.post('/user/get-user-profile', {}, {
+            withCredentials: true
         });
     },
     getOrders: () => {
-        return api.post('/user/get-orders',{},{
-            withCredentials:true
+        return api.post('/user/get-orders', {}, {
+            withCredentials: true
         });
     },
     getAddresses: () => {
-        return api.post('/user/get-user-addresess',{},{
-            withCredentials:true
+        return api.post('/user/get-user-addresess', {}, {
+            withCredentials: true
         });
     },
-    getCart: () => api.post('/user/get-user-cart',{},{
-            withCredentials:true
-        }).catch((error) => {
+    getCart: () => api.post('/user/get-user-cart', {}, {
+        withCredentials: true
+    }).catch((error) => {
         if (error.response?.status === 404) {
             throw new Error('Cart endpoint not available. Using localStorage only.');
         }
@@ -79,8 +79,8 @@ export const userAPI = {
         }
         throw error;
     }),
-    createAddress: async(address: unknown) => await api.post('/user/create-newAddress', address),
-    updateAddress: async(addressId: number, address: unknown) => await api.put(`/user/update-address/${addressId}`, address).catch((error) => {
+    createAddress: async (address: unknown) => await api.post('/user/create-newAddress', address),
+    updateAddress: async (addressId: number, address: unknown) => await api.put(`/user/update-address/${addressId}`, address).catch((error) => {
         if (error.response?.status === 404) {
             throw new Error('Update address endpoint not available.');
         }

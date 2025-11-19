@@ -10,27 +10,66 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   // -------------------------------
   // NORMALIZE BACKEND RESPONSE
   // -------------------------------
-  const normalizeProfile = (data: any): UserProfile => {
+  const normalizeProfile = (data: unknown): UserProfile => {
+    // Type guard to check if data is an object
+    if (!data || typeof data !== 'object') {
+      return {
+        email: user?.email || "",
+        Addresses: []
+      };
+    }
+
+    // Cast to Record<string, unknown> for easier property access
+    const dataObj = data as Record<string, unknown>;
+
+    // Normalize addresses array
+    let normalizedAddresses: Address[] = [];
+    if (Array.isArray(dataObj.Addresses)) {
+      normalizedAddresses = dataObj.Addresses.map((a: unknown) => {
+        // Type guard for address object
+        if (!a || typeof a !== 'object') {
+          return {
+            id: 0,
+            FullName: "",
+            phone1: "",
+            phone2: "",
+            address: "",
+            city: "",
+            state: "",
+            pinCode: "",
+            addressType: "home",
+          };
+        }
+
+        const addr = a as Record<string, unknown>;
+        // Ensure addressType is valid
+        let addressType: 'home' | 'work' = "home";
+        if (typeof addr.addressType === 'string' && (addr.addressType === 'home' || addr.addressType === 'work')) {
+          addressType = addr.addressType;
+        }
+
+        return {
+          id: typeof addr.id === 'number' ? addr.id : 0,
+          FullName: typeof addr.FullName === 'string' ? addr.FullName : "",
+          phone1: typeof addr.phone1 === 'string' ? addr.phone1 : "",
+          phone2: typeof addr.phone2 === 'string' ? addr.phone2 : "",
+          address: typeof addr.address === 'string' ? addr.address : "",
+          city: typeof addr.city === 'string' ? addr.city : "",
+          state: typeof addr.state === 'string' ? addr.state : "",
+          pinCode: typeof addr.pinCode === 'string' ? addr.pinCode : "",
+          addressType: addressType,
+        };
+      });
+    }
+
     return {
-      email: data.email || "",
-      Addresses: Array.isArray(data.Addresses)
-        ? data.Addresses.map((a: any) => ({
-            id: a.id || 0,
-            FullName: a.FullName || "",
-            phone1: a.phone1 || "",
-            phone2: a.phone2 || "",
-            address: a.address || "",
-            city: a.city || "",
-            state: a.state || "",
-            pinCode: a.pinCode || "",
-            addressType: a.addressType || "home",
-        }))
-        : [],
+      email: typeof dataObj.email === 'string' ? dataObj.email : user?.email || "",
+      Addresses: normalizedAddresses,
     };
   };
 
@@ -62,6 +101,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       setProfile(normalized);
 
     } catch (err) {
+      console.error('❌ ProfileContext: Failed to fetch profile:', err);
       const message = err instanceof Error ? err.message : "Failed to fetch profile";
       setError(message);
       setProfile(null);
@@ -138,13 +178,13 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   // RUN ON AUTH CHANGE
   // -------------------------------
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && user) {
       fetchProfile();
     } else {
       setIsLoading(false);
       setProfile(null);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   return (
     <ProfileContext.Provider

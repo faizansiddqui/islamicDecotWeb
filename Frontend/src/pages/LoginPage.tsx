@@ -8,12 +8,20 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ onBack }: LoginPageProps) {
-  const { login, verifyEmail } = useAuth();
+  const { login, verifyEmail, isAuthenticated, user } = useAuth();
   const [email, setEmail] = useState('');
   const [step, setStep] = useState<'email' | 'waiting'>('email');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Redirect authenticated users to home page
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      navigateTo('/');
+      if (onBack) onBack();
+    }
+  }, [isAuthenticated, user, onBack]);
 
   // Check for access token in URL (from email link redirect)
   // Supabase sends token in hash fragment
@@ -77,12 +85,26 @@ export default function LoginPage({ onBack }: LoginPageProps) {
 
     setIsLoading(true);
     try {
-      await login(email);
-      setSuccess('Verification email sent! Please check your inbox.');
-      setStep('waiting');
+      const response = await login(email);
+
+      // If user is already registered, they should be authenticated now
+      // Redirect them to home page immediately
+      if (response.loginType === 'normal') {
+        setSuccess('Login successful! Redirecting to your account...');
+        // Force a check of the auth state
+        setTimeout(() => {
+          navigateTo('/');
+          if (onBack) onBack();
+        }, 1500);
+      } else {
+        // New user - they need to check their email
+        setSuccess('Verification email sent! Please check your inbox.');
+        setStep('waiting');
+      }
     } catch (err: unknown) {
       const error = err as { message?: string };
       setError(error.message || 'Failed to send verification email. Please try again.');
+      setStep('email');
     } finally {
       setIsLoading(false);
     }
@@ -108,6 +130,11 @@ export default function LoginPage({ onBack }: LoginPageProps) {
       setIsLoading(false);
     }
   };
+
+  // Don't show the login page if user is already authenticated
+  if (isAuthenticated) {
+    return <div>Redirecting...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
@@ -166,7 +193,7 @@ export default function LoginPage({ onBack }: LoginPageProps) {
                   </>
                 ) : (
                   <>
-                    Send Verification Link
+                    Login / SignUp
                     <ArrowRight size={20} />
                   </>
                 )}
@@ -185,7 +212,7 @@ export default function LoginPage({ onBack }: LoginPageProps) {
                 <p className="font-medium text-gray-900 mb-4">{email}</p>
                 <p className="text-sm text-gray-500">
                   Click the link in the email to complete your login.
-                  The link will expire in 1 hour.
+                  The link will expire in 5 minutes.
                 </p>
               </div>
 
@@ -233,4 +260,3 @@ export default function LoginPage({ onBack }: LoginPageProps) {
     </div>
   );
 }
-

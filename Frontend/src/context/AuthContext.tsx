@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authAPI } from '../services/api';
+import { authAPI, userAPI } from '../services/api';
 
 interface User {
     id: string;
@@ -10,7 +10,7 @@ interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    login: (email: string) => Promise<void>;
+    login: (email: string) => Promise<{ loginType: string }>;
     verifyEmail: (token: string) => Promise<void>;
     verifyCode: (email: string, code: string) => Promise<void>;
     logout: () => void;
@@ -29,7 +29,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const checkAuth = async () => {
-
         try {
             // Check if user info is stored in localStorage
             const savedUser = localStorage.getItem('user');
@@ -45,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     localStorage.removeItem('isAuthenticated');
                 }
             } else {
-                console.log('⚠️ AuthContext: No user data found in localStorage');
+                // console.log('⚠️ AuthContext: No user data found in localStorage');
             }
         } catch (error) {
             console.error('❌ AuthContext: Auth check failed:', error);
@@ -57,9 +56,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = async (email: string) => {
         try {
             const response = await authAPI.login(email);
-            console.log('OTP sent, response:', response.data);
-            // Backend sends OTP to email via Supabase
-            // No user data yet, user needs to verify OTP in email
+
+            // For existing users, the backend immediately authenticates them
+            // We need to update the frontend state to reflect this
+            if (response.data.loginType === 'normal') {
+                // For normal login, we need to fetch the user profile since it's not returned in the login response
+                try {
+                    // Try to fetch user profile
+                    const profileResponse = await userAPI.getProfile();
+
+                    // Extract user data from profile response
+                    const profileData = profileResponse.data?.data || profileResponse.data?.user || profileResponse.data?.profile || profileResponse.data;
+                    if (profileData && profileData.email) {
+                        const userData = {
+                            id: profileData.id || '',
+                            email: profileData.email
+                        };
+
+                        setUser(userData);
+                        localStorage.setItem('user', JSON.stringify(userData));
+                        localStorage.setItem('isAuthenticated', 'true');
+                    } else {
+                        // Fallback to using the email from the login
+                        const userData = {
+                            id: '', // We don't have the ID, but this should be enough for now
+                            email: email
+                        };
+
+                        setUser(userData);
+                        localStorage.setItem('user', JSON.stringify(userData));
+                        localStorage.setItem('isAuthenticated', 'true');
+                    }
+                } catch (profileError) {
+                    console.error('❌ AuthContext: Failed to fetch profile after login:', profileError);
+                    // Fallback to using the email from the login
+                    const userData = {
+                        id: '', // We don't have the ID, but this should be enough for now
+                        email: email
+                    };
+
+                    setUser(userData);
+                    localStorage.setItem('user', JSON.stringify(userData));
+                    localStorage.setItem('isAuthenticated', 'true');
+                }
+            }
+
+            // Backend sends OTP to email via Supabase for new users
+            // For existing users, it returns loginType: "normal"
+            return {
+                loginType: response.data.loginType || 'magic_link'
+            };
         } catch (error: unknown) {
             const err = error as { response?: { data?: { Message?: string; message?: string } } };
             console.error('❌ Login request failed:', err);
@@ -70,7 +116,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const verifyEmail = async (token: string) => {
         try {
-
             // Decode JWT to get email (without verification for display purposes only)
             const base64Url = token.split('.')[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -87,7 +132,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Backend sets httpOnly cookies (accessToken, refreshToken)
             // and returns success message
             if (response.data && response.data.Message) {
-
                 // Store user data extracted from token
                 const userData = {
                     id: userId,
@@ -137,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(userData);
                 localStorage.setItem('user', JSON.stringify(userData));
                 localStorage.setItem('authToken', response.data.token || 'authenticated');
+                localStorage.setItem('isAuthenticated', 'true');
                 return;
             }
 
@@ -225,4 +270,3 @@ export function useAuth() {
     }
     return context;
 }
-
