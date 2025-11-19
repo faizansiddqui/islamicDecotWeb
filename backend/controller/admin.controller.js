@@ -233,8 +233,6 @@ const updateProduct = async (req, res) => {
     const { product_id } = req.params;
     const { price, selling_price, quantity } = req.body;
 
-    console.log(`🔵 Updating product ${product_id} with:`, { price, selling_price, quantity });
-
     // Validate required fields
     if (price === undefined && selling_price === undefined && quantity === undefined) {
       return res.status(400).json({ message: "At least one field (price, selling_price, quantity) is required" });
@@ -260,8 +258,6 @@ const updateProduct = async (req, res) => {
 
     // Update the product
     await product.update(updateData);
-
-    console.log(`✅ Product ${product_id} updated successfully`);
     res.status(200).json({
       status: true,
       message: "Product updated successfully",
@@ -275,7 +271,6 @@ const updateProduct = async (req, res) => {
 
 const getProducts = async (req, res) => {
   try {
-    console.log('🔵 getProducts called - fetching all products');
     const products = await Products.findAll({
       include: [{
         model: Catagories,
@@ -284,8 +279,6 @@ const getProducts = async (req, res) => {
       }],
       order: [['product_id', 'DESC']]
     });
-
-    console.log(`✅ Found ${products.length} products`);
     res.status(200).json({ status: true, products: products });
   } catch (error) {
     console.error('❌ Error fetching products:', error);

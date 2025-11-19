@@ -1,6 +1,6 @@
 import { router } from "../app.js";
 // import { getOrders } from "../controller/admin.controller.js";
-import {getProductById,getProductByCatagory,searchProduct,showProduct,order,createAddress,getUserProfile,getOrders,getUserAddresess,addToCart,getUserCart,removeFromCart} from "../controller/user.controller.js"
+import {getProductById,getProductByCatagory,searchProduct,showProduct,order,createAddress,getUserProfile,getOrders,getUserAddresess,addToCart,getUserCart,removeFromCart,updateUserAddress} from "../controller/user.controller.js"
 import { authMiddleware } from "../middleware/auth.middleware.js";
 
 //profile related routes
@@ -20,6 +20,7 @@ router.post('/add-to-cart',authMiddleware,addToCart)
 router.post('/get-user-cart',authMiddleware,getUserCart)
 router.get('/remove-cart/:cart_id',removeFromCart)
 // router.post('/create-order',authMiddleware,createOrder)
+router.patch('/update-user-address',updateUserAddress);
 router.post('/create-newAddress',authMiddleware,createAddress);
 router.post('/get-user-addresess',authMiddleware,getUserAddresess)
 
