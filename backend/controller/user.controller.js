@@ -5,7 +5,7 @@ import { v4 } from "uuid";
 import { User } from "../model/user.model.js";
 import Addresses from "../model/addresses.model.js";
 import AddToCart from "../model/addToCart.model.js";
-import { Transaction, where } from "sequelize";
+import { Transaction } from "sequelize";
 
 const getProductByCatagory = async (req, res) => {
   try {
@@ -352,18 +352,6 @@ export const removeFromCart = async (req, res) => {
   }
 };
 
-export {
-  getOrders,
-  getUserAddresess,
-  getUserProfile,
-  getProductByCatagory,
-  searchProduct,
-  showProduct,
-  getProductById,
-  order,
-  createAddress,
-};
-
 export const updateUserAddress = async (req, res) => {
   const {
     address_id,
@@ -396,6 +384,26 @@ export const updateUserAddress = async (req, res) => {
     addressType,
     
   },{where:{id:address_id}})
+  
+if (updatedAddress[0] === 0) {
+  return res.status(400).json({ 
+    message: "Update failed or address not found" 
+  });
+}
 
   res.status(200).json({ updatedAddress });
 };
+
+
+export {
+  getOrders,
+  getUserAddresess,
+  getUserProfile,
+  getProductByCatagory,
+  searchProduct,
+  showProduct,
+  getProductById,
+  order,
+  createAddress,
+};
+

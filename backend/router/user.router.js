@@ -20,7 +20,7 @@ router.post('/add-to-cart',authMiddleware,addToCart)
 router.post('/get-user-cart',authMiddleware,getUserCart)
 router.get('/remove-cart/:cart_id',removeFromCart)
 // router.post('/create-order',authMiddleware,createOrder)
-router.patch('/update-user-address',updateUserAddress);
+router.patch('/update-user-address',authMiddleware,updateUserAddress);
 router.post('/create-newAddress',authMiddleware,createAddress);
 router.post('/get-user-addresess',authMiddleware,getUserAddresess)
 
