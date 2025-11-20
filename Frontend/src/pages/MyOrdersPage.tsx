@@ -59,13 +59,13 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
           // Handle case where orders are in data.data (nested)
           ordersData = response.data.data;
         }
-        
+
         // Ensure each order has a quantity of at least 1
         const processedOrders = ordersData.map(order => ({
           ...order,
           quantity: order.quantity || 1
         }));
-        
+
         setOrders(processedOrders);
       }
       setError(null);
@@ -100,7 +100,7 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
 
   const getProductImage = (product?: Product) => {
     if (!product || !product.product_image) return '';
-    
+
     if (typeof product.product_image === 'string') {
       return product.product_image;
     } else if (Array.isArray(product.product_image)) {
@@ -109,19 +109,19 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
       const imageValues = Object.values(product.product_image);
       return imageValues[0] || '';
     }
-    
+
     return '';
   };
 
   const getProductPrice = (product?: Product) => {
     if (!product) return 0;
-    
+
     if (typeof product.selling_price === 'number' && !isNaN(product.selling_price) && product.selling_price > 0) {
       return product.selling_price;
     } else if (typeof product.price === 'number' && !isNaN(product.price) && product.price > 0) {
       return product.price;
     }
-    
+
     return 0;
   };
 
@@ -175,8 +175,8 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
         ) : (
           <div className="space-y-4">
             {orders.map((order) => (
-              <div 
-                key={order.order_id} 
+              <div
+                key={order.order_id}
                 className="bg-white rounded-xl shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
                 onClick={() => handleOrderClick(order.order_id)}
               >
@@ -190,7 +190,7 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
                       />
                     </div>
                   )}
-                  
+
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <div>
@@ -215,7 +215,7 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
                           Status: <span className="font-medium">{order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Confirmed'}</span>
                         </p>
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">
                           View Details
