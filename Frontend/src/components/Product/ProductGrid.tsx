@@ -278,7 +278,7 @@ export default function ProductGrid({ onProductClick, searchQuery }: ProductGrid
                     name={product.name || product.title || 'Product'}
                     price={displayPrice}
                     image={imageUrl}
-                    category={product.Catagory?.name || 'Uncategorized'}
+                    category={product.Catagory?.name || ''}
                     inStock={product.quantity > 0}
                     onClick={() => onProductClick(product.product_id)}
                     badge={badge}

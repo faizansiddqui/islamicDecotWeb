@@ -13,8 +13,8 @@ export default function SearchSuggestions({ suggestions, onSelect, searchQuery }
     }
 
     return (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
-            <div className="p-2">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto sm:left-auto sm:right-auto sm:w-full sm:min-w-[400px]">
+            <div className="p-3">
                 <div className="text-xs text-gray-500 px-3 py-2 font-medium">
                     Suggestions ({suggestions.length})
                 </div>
@@ -24,15 +24,15 @@ export default function SearchSuggestions({ suggestions, onSelect, searchQuery }
                         <button
                             key={product.product_id}
                             onClick={() => onSelect(product.product_id)}
-                            className="w-full flex items-center gap-3 px-3 py-2 hover:bg-amber-50 rounded-lg transition-colors text-left"
+                            className="w-full flex items-center gap-4 px-3 py-3 hover:bg-amber-50 rounded-lg transition-colors text-left"
                         >
                             {imageUrl && (
                                 <img
                                     src={imageUrl}
                                     alt={product.name || product.title || 'Product'}
-                                    className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
+                                    className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
                                     onError={(e) => {
-                                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/48?text=No+Image';
+                                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/64?text=No+Image';
                                     }}
                                 />
                             )}
@@ -40,7 +40,7 @@ export default function SearchSuggestions({ suggestions, onSelect, searchQuery }
                                 <p className="text-sm font-medium text-gray-900 truncate">
                                     {product.name || product.title || 'Product'}
                                 </p>
-                                <p className="text-xs text-gray-600">
+                                <p className="text-xs text-gray-600 mt-1">
                                     ${product.selling_price || product.price}
                                     {product.Catagory?.name && ` • ${product.Catagory.name}`}
                                 </p>
@@ -58,4 +58,3 @@ export default function SearchSuggestions({ suggestions, onSelect, searchQuery }
         </div>
     );
 }
-

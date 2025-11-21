@@ -1,4 +1,4 @@
-import { ShoppingCart, Share2, ArrowRight } from 'lucide-react';
+import { ShoppingCart, ArrowRight } from 'lucide-react';
 
 interface ProductActionsProps {
     quantity: number;
@@ -38,6 +38,7 @@ export default function ProductActions({
                     +
                 </button>
             </div>
+
             {addedToCart ? (
                 <button
                     onClick={onGoToCart}
@@ -56,10 +57,6 @@ export default function ProductActions({
                     {quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
                 </button>
             )}
-            <button className="p-3 sm:p-4 border-2 border-gray-300 hover:border-amber-700 hover:text-amber-700 rounded-lg transition-colors self-start sm:self-auto">
-                <Share2 size={18} className="sm:w-5 sm:h-5" />
-            </button>
         </div>
     );
 }
-

@@ -22,10 +22,7 @@ export default function CartPage({ onBack }: CartPageProps) {
     const [productStocks, setProductStocks] = useState<Record<number, number>>({});
     const [loadingStocks, setLoadingStocks] = useState(false);
 
-    const subtotal = getTotalPrice();
-    const shipping = subtotal >= 50 ? 0 : 5.99;
-    const tax = subtotal * 0.08; // 8% tax
-    const total = subtotal + shipping + tax;
+    const total = getTotalPrice();
 
     // Fetch stock information for cart items
     useEffect(() => {

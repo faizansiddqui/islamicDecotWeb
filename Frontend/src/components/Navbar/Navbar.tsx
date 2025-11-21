@@ -3,6 +3,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { navigateTo } from '../../utils/navigation';
+import { productAPI } from '../../services/api';
+import SearchSuggestions from '../Search/SearchSuggestions';
+import { Product } from '../../utils/productUtils';
 
 interface NavbarProps {
   onSearchChange?: (query: string) => void;
@@ -12,9 +15,42 @@ export default function Navbar({ onSearchChange }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const expandedSearchRef = useRef<HTMLDivElement>(null);
   const { getTotalItems, saveCartToLocalStorage } = useCart();
   const { isAuthenticated, logout } = useAuth();
+
+  // Load all products for suggestions
+  useEffect(() => {
+    const loadAllProducts = async () => {
+      try {
+        const response = await productAPI.getProducts();
+        if (response.data.status && Array.isArray(response.data.products)) {
+          setAllProducts(response.data.products);
+        }
+      } catch (error) {
+        console.error('Error loading products for suggestions:', error);
+      }
+    };
+    loadAllProducts();
+  }, []);
+
+  // Get filtered suggestions based on search query
+  const getFilteredSuggestions = () => {
+    if (!searchQuery.trim() || searchQuery.length < 2) {
+      return [];
+    }
+    const query = searchQuery.toLowerCase();
+    return allProducts.filter((product) => {
+      const name = (product.name || product.title || '').toLowerCase();
+      const category = product.Catagory?.name?.toLowerCase() || '';
+      return name.includes(query) || category.includes(query);
+    }).slice(0, 5);
+  };
 
   const handleCartClick = () => {
     navigateTo('/cart');
@@ -31,14 +67,21 @@ export default function Navbar({ onSearchChange }: NavbarProps) {
     e.preventDefault();
     const trimmedQuery = searchQuery.trim();
     if (trimmedQuery) {
-      // Navigate to categories page and filter products
-      navigateTo(`/categories?search=${encodeURIComponent(trimmedQuery)}`);
+      // Navigate to search page instead of categories page
+      navigateTo(`/search?q=${encodeURIComponent(trimmedQuery)}`);
+      setShowSuggestions(false);
     }
   };
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     onSearchChange?.(value);
+  };
+
+  const handleSuggestionSelect = (productId: number) => {
+    setShowSuggestions(false);
+    // Navigate to product details page
+    navigateTo(`/product/${productId}`);
   };
 
   // Close profile dropdown when clicking outside
@@ -62,15 +105,64 @@ export default function Navbar({ onSearchChange }: NavbarProps) {
   useEffect(() => {
     const handleHashChange = () => {
       setIsMenuOpen(false);
+      setShowSuggestions(false);
     };
 
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    if (showSuggestions) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSuggestions]);
+
   const handleCategoryClick = () => {
     navigateTo('/categories');
   };
+
+  const handleSearchFocus = () => {
+    setIsSearchExpanded(true);
+    setShowSuggestions(true);
+  };
+
+  const handleSearchBlur = () => {
+    // Delay hiding to allow clicking on suggestions
+    setTimeout(() => {
+      setIsSearchExpanded(false);
+      setShowSuggestions(false);
+    }, 150);
+  };
+
+  // Close expanded search when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (expandedSearchRef.current && !expandedSearchRef.current.contains(event.target as Node)) {
+        setIsSearchExpanded(false);
+        setShowSuggestions(false);
+      }
+    };
+
+    if (isSearchExpanded) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSearchExpanded]);
 
   return (
     <>
@@ -95,25 +187,31 @@ export default function Navbar({ onSearchChange }: NavbarProps) {
             </div>
 
             {/* Search - Always visible, responsive size */}
-            <form onSubmit={handleSearchSubmit} className="flex flex-1 max-w-md mx-2 xs:mx-3 sm:mx-4 lg:mx-6">
-              <div className="relative w-full">
-                <input
-                  type="text"
-                  placeholder="Search Islamic wall art..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSearchSubmit(e);
-                    }
-                  }}
-                  className="w-full px-2 xs:px-3 sm:px-4 py-1 xs:py-1.5 sm:py-2 pr-7 xs:pr-8 sm:pr-10 rounded-lg border border-gray-300 focus:border-amber-700 focus:ring-1 focus:ring-amber-700 focus:ring-opacity-50 outline-none transition-all text-[10px] xs:text-xs sm:text-sm"
-                />
-                <button type="submit" className="absolute right-1.5 xs:right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-amber-700 transition-colors">
-                  <Search size={14} />
-                </button>
-              </div>
-            </form>
+            <div
+              className={`flex flex-1 max-w-md mx-2 xs:mx-3 sm:mx-4 lg:mx-6 ${isSearchExpanded ? 'hidden' : 'block'}`}
+              ref={searchContainerRef}
+            >
+              <form onSubmit={handleSearchSubmit} className="relative w-full">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search Islamic wall art..."
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    onFocus={handleSearchFocus}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSearchSubmit(e);
+                      }
+                    }}
+                    className="w-full px-2 xs:px-3 sm:px-4 py-1 xs:py-1.5 sm:py-2 pr-7 xs:pr-8 sm:pr-10 rounded-lg border border-gray-300 focus:border-amber-700 focus:ring-1 focus:ring-amber-700 focus:ring-opacity-50 outline-none transition-all text-[10px] xs:text-xs sm:text-sm"
+                  />
+                  <button type="submit" className="absolute right-1.5 xs:right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-amber-700 transition-colors">
+                    <Search size={14} />
+                  </button>
+                </div>
+              </form>
+            </div>
             <div className="hidden lg:flex items-center space-x-1">
               <button
                 onClick={handleCategoryClick}
@@ -289,6 +387,51 @@ export default function Navbar({ onSearchChange }: NavbarProps) {
         </div>
 
       </nav>
+
+      {/* Expanded Search Bar - Full width below navbar */}
+      {isSearchExpanded && (
+        <div
+          ref={expandedSearchRef}
+          className="bg-white shadow-lg border-t border-gray-200 z-40 w-full"
+        >
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <form onSubmit={handleSearchSubmit} className="relative">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search Islamic wall art..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onBlur={handleSearchBlur}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearchSubmit(e);
+                    }
+                  }}
+                  className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:border-amber-700 focus:ring-2 focus:ring-amber-700 focus:ring-opacity-50 outline-none text-base"
+                  autoFocus
+                />
+                <button type="submit" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-amber-700 transition-colors">
+                  <Search size={20} />
+                </button>
+              </div>
+              {showSuggestions && (
+                <div className="relative">
+                  <SearchSuggestions
+                    suggestions={getFilteredSuggestions()}
+                    onSelect={(productId) => {
+                      handleSuggestionSelect(productId);
+                      setIsSearchExpanded(false);
+                      setShowSuggestions(false);
+                    }}
+                    searchQuery={searchQuery}
+                  />
+                </div>
+              )}
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }

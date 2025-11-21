@@ -20,12 +20,15 @@ import ShippingInfoPage from './pages/ShippingInfoPage';
 import ReturnsPage from './pages/ReturnsPage';
 import FAQPage from './pages/FAQPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+import SearchPage from './pages/SearchPage';
 import { useAdminAuth } from './context/AdminAuthContext';
 import { navigateTo } from './utils/navigation';
 // import AuthCallback from './pages/AuthCallback';
 
 
-type PageType = 'home' | 'admin' | 'cart' | 'checkout' | 'log' | 'verify' | 'profile' | 'orders' | 'order-details' | 'settings' | 'categories' | 'contact' | 'shipping' | 'returns' | 'faq' | 'wishlist' | 'auth-callback';
+type PageType = 'home' | 'admin' | 'cart' | 'checkout' | 'log' | 'verify' | 'profile' | 'orders' | 'order-details' | 'settings' | 'categories' | 'contact' | 'shipping' | 'returns' | 'faq' | 'wishlist' | 'auth-callback' | 'privacy' | 'terms' | 'search';
 
 export default function App() {
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
@@ -78,6 +81,15 @@ export default function App() {
         const orderId = path.split('/').pop() || '';
         setSelectedOrderId(orderId);
         setCurrentPage('order-details');
+      } else if (path.startsWith('/product/')) {
+        const productId = path.split('/').pop();
+        if (productId) {
+          const productIdNum = parseInt(productId, 10);
+          if (!isNaN(productIdNum)) {
+            setSelectedProductId(productIdNum);
+          }
+        }
+        setCurrentPage('home'); // Keep home page active but show product modal
       } else if (path === '/wishlist') {
         setCurrentPage('wishlist');
       } else if (path === '/settings') {
@@ -92,6 +104,12 @@ export default function App() {
         setCurrentPage('returns');
       } else if (path === '/faq') {
         setCurrentPage('faq');
+      } else if (path === '/privacy') {
+        setCurrentPage('privacy');
+      } else if (path === '/terms') {
+        setCurrentPage('terms');
+      } else if (path === '/search') {
+        setCurrentPage('search');
       } else {
         setCurrentPage('home');
       }
@@ -155,6 +173,18 @@ export default function App() {
 
   if (currentPage === 'faq') {
     return <FAQPage onBack={() => navigateTo('/')} />;
+  }
+
+  if (currentPage === 'privacy') {
+    return <PrivacyPolicyPage onBack={() => navigateTo('/')} />;
+  }
+
+  if (currentPage === 'terms') {
+    return <TermsOfServicePage onBack={() => navigateTo('/')} />;
+  }
+
+  if (currentPage === 'search') {
+    return <SearchPage onBack={() => navigateTo('/')} />;
   }
 
   return (

@@ -87,7 +87,7 @@ export default function BestSellers({ onProductClick }: BestSellersProps) {
                   <div
                     key={product.product_id}
                     onClick={() => onProductClick(product.product_id)}
-                    className="group cursor-pointer bg-white rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                    className="group cursor-pointer bg-white rounded-lg overflow-hidden sm:hover:shadow-xl sm:transition-all sm:duration-300 sm:transform sm:hover:-translate-y-1"
                   >
                     <div className="relative aspect-square overflow-hidden bg-gray-100">
                       <div className="absolute top-1.5 xs:top-2 sm:top-3 left-1.5 xs:left-2 sm:left-3 z-10">
@@ -98,7 +98,7 @@ export default function BestSellers({ onProductClick }: BestSellersProps) {
                       <img
                         src={imageUrl}
                         alt={product.name || product.title || 'Product'}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        className="w-full h-full object-cover sm:group-hover:scale-110 sm:transition-transform sm:duration-500"
                         loading="lazy"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400?text=No+Image';
@@ -123,7 +123,7 @@ export default function BestSellers({ onProductClick }: BestSellersProps) {
                         </span>
                       </div>
 
-                      <h3 className="text-[10px] xs:text-xs sm:text-sm lg:text-base text-gray-900 font-medium mb-1.5 xs:mb-2 sm:mb-3 line-clamp-2 min-h-[2rem] xs:min-h-[2.5rem] sm:min-h-[3rem] group-hover:text-amber-700 transition-colors">
+                      <h3 className="text-[10px] xs:text-xs sm:text-sm lg:text-base text-gray-900 font-medium mb-1.5 xs:mb-2 sm:mb-3 line-clamp-2 min-h-[2rem] xs:min-h-[2.5rem] sm:min-h-[3rem] sm:group-hover:text-amber-700 sm:transition-colors">
                         {product.name || product.title || 'Product'}
                       </h3>
 
@@ -151,7 +151,7 @@ export default function BestSellers({ onProductClick }: BestSellersProps) {
             <div className="text-center mt-6 xs:mt-8 sm:mt-10 lg:mt-12">
               <button
                 onClick={() => window.location.hash = '#/categories'}
-                className="w-full xs:w-auto bg-amber-700 hover:bg-amber-800 text-white px-4 xs:px-6 sm:px-8 lg:px-12 py-2 xs:py-3 sm:py-3.5 lg:py-4 text-xs xs:text-sm sm:text-base lg:text-lg font-semibold transition-all transform hover:scale-105 uppercase tracking-wide rounded-lg shadow-lg"
+                className="w-full xs:w-auto bg-amber-700 hover:bg-amber-800 text-white px-4 xs:px-6 sm:px-8 lg:px-12 py-2 xs:py-3 sm:py-3.5 lg:py-4 text-xs xs:text-sm sm:text-base lg:text-lg font-semibold transition-all sm:transform sm:hover:scale-105 uppercase tracking-wide rounded-lg shadow-lg"
               >
                 View All Products
               </button>

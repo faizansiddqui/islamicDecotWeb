@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { X } from 'lucide-react';
+import type { Country, State } from 'state-country';
 
 interface Address {
     id?: number;
@@ -20,7 +21,7 @@ interface AddressFormProps {
     address?: Address;
     onSubmit: (address: Address) => void;
     onCancel: () => void;
-    addressCount?: number; // Add this new prop
+    addressCount?: number;
 }
 
 export default function AddressForm({ address, onSubmit, onCancel, addressCount = 0 }: AddressFormProps) {
@@ -29,13 +30,67 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
         FullName: address?.FullName || '',
         phone1: address?.phone1 || '',
         phone2: address?.phone2 || '',
-        country: address?.country || 'India',
+        country: address?.country || '',
         state: address?.state || '',
         city: address?.city || '',
         pinCode: address?.pinCode || '',
         address: address?.address || '',
         addressType: address?.addressType || 'home',
     });
+
+    // State for available states based on selected country
+    const [availableStates, setAvailableStates] = useState<string[]>([]);
+
+    // State for countries and states data
+    const [countriesList, setCountriesList] = useState<string[]>([]);
+    const [countriesAndStates, setCountriesAndStates] = useState<Record<string, string[]>>({});
+    const [loading, setLoading] = useState(true);
+
+    // Load country data when component mounts
+    useEffect(() => {
+        const loadCountryData = async () => {
+            try {
+                const stateCountry = await import('state-country');
+                const sc = stateCountry.default;
+
+                // Get all countries
+                const allCountries: Country[] = sc.getAllCountries();
+
+                // Create country list and state map
+                const countryList: string[] = [];
+                const countryStateMap: Record<string, string[]> = {};
+
+                // Process countries
+                allCountries.forEach((country: Country) => {
+                    countryList.push(country.name);
+
+                    // Get states for this country
+                    const countryStates: State[] = sc.getAllStatesInCountry(country.name);
+                    countryStateMap[country.name] = countryStates.map((state: State) => state.name);
+                });
+
+                setCountriesList(countryList);
+                setCountriesAndStates(countryStateMap);
+
+                // Set default country if none selected
+                if (!formData.country && countryList.length > 0) {
+                    setFormData(prev => ({ ...prev, country: countryList[0] }));
+                }
+            } catch (error) {
+                console.error('Failed to load country data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadCountryData();
+    }, []);
+
+    // Initialize available states based on selected country
+    useEffect(() => {
+        const states = countriesAndStates[formData.country] || [];
+        setAvailableStates(states);
+    }, [formData.country, countriesAndStates]);
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,6 +102,14 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
         // Clear error when user starts typing
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
+        }
+
+        // Handle country change to update available states
+        if (name === 'country') {
+            const countryStates = countriesAndStates[value] || [];
+            setAvailableStates(countryStates);
+            // Reset state selection when country changes
+            setFormData(prev => ({ ...prev, state: '' }));
         }
     };
 
@@ -180,6 +243,14 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
         }
     };
 
+    if (loading) {
+        return (
+            <div className="p-6 flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+            </div>
+        );
+    }
+
     return (
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
@@ -209,7 +280,8 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Changed from form to div to avoid nested forms */}
+            <div className="space-y-6">
                 {/* Disable form fields when trying to create new address and limit is reached */}
                 <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${!address?.id && addressCount >= 3 ? 'opacity-50 pointer-events-none' : ''}`}>
                     <div>
@@ -260,37 +332,22 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                         {errors.phone2 && <p className="mt-1 text-sm text-red-600">{errors.phone2}</p>}
                     </div>
 
-                    <div>
+                    <div className="space-y-4">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Country *
+                            Street Address
                         </label>
-                        <input
-                            type="text"
-                            name="country"
-                            value={formData.country}
+                        <textarea
+                            name="address"
+                            value={formData.address}
                             onChange={handleChange}
-                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition-colors ${errors.country ? 'border-red-300' : 'border-gray-300'}`}
-                            placeholder="Enter country"
+                            rows={3}
+                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition-colors ${errors.address ? 'border-red-300' : 'border-gray-300'}`}
+                            placeholder="Enter complete address"
                             disabled={!address?.id && addressCount >= 3}
                         />
-                        {errors.country && <p className="mt-1 text-sm text-red-600">{errors.country}</p>}
+                        {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            State *
-                        </label>
-                        <input
-                            type="text"
-                            name="state"
-                            value={formData.state}
-                            onChange={handleChange}
-                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition-colors ${errors.state ? 'border-red-300' : 'border-gray-300'}`}
-                            placeholder="Enter state"
-                            disabled={!address?.id && addressCount >= 3}
-                        />
-                        {errors.state && <p className="mt-1 text-sm text-red-600">{errors.state}</p>}
-                    </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -310,6 +367,25 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
+                            State *
+                        </label>
+                        <select
+                            name="state"
+                            value={formData.state}
+                            onChange={handleChange}
+                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition-colors ${errors.state ? 'border-red-300' : 'border-gray-300'}`}
+                            disabled={!address?.id && addressCount >= 3 || availableStates.length === 0}
+                        >
+                            <option value="">Select State</option>
+                            {availableStates.map((state) => (
+                                <option key={state} value={state}>{state}</option>
+                            ))}
+                        </select>
+                        {errors.state && <p className="mt-1 text-sm text-red-600">{errors.state}</p>}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                             PIN Code *
                         </label>
                         <input
@@ -324,39 +400,60 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                         {errors.pinCode && <p className="mt-1 text-sm text-red-600">{errors.pinCode}</p>}
                     </div>
 
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Country *
+                        </label>
+                        <select
+                            name="country"
+                            value={formData.country}
+                            onChange={handleChange}
+                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition-colors ${errors.country ? 'border-red-300' : 'border-gray-300'}`}
+                            disabled={!address?.id && addressCount >= 3}
+                        >
+                            <option value="">Select Country</option>
+                            {countriesList.map((country) => (
+                                <option key={country} value={country}>{country}</option>
+                            ))}
+                        </select>
+                        {errors.country && <p className="mt-1 text-sm text-red-600">{errors.country}</p>}
+                    </div>
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Address Type *
                         </label>
-                        <select
-                            name="addressType"
-                            value={formData.addressType}
-                            onChange={handleChange}
-                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition-colors ${errors.addressType ? 'border-red-300' : 'border-gray-300'}`}
-                            disabled={!address?.id && addressCount >= 3}
-                        >
-                            <option value="home">Home</option>
-                            <option value="work">Work</option>
-                        </select>
+                        <div className="flex space-x-4">
+                            <label className="inline-flex items-center">
+                                <input
+                                    type="radio"
+                                    name="addressType"
+                                    value="home"
+                                    checked={formData.addressType === 'home'}
+                                    onChange={handleChange}
+                                    className="text-amber-600 focus:ring-amber-500"
+                                    disabled={!address?.id && addressCount >= 3}
+                                />
+                                <span className="ml-2 text-gray-700">Home</span>
+                            </label>
+                            <label className="inline-flex items-center">
+                                <input
+                                    type="radio"
+                                    name="addressType"
+                                    value="work"
+                                    checked={formData.addressType === 'work'}
+                                    onChange={handleChange}
+                                    className="text-amber-600 focus:ring-amber-500"
+                                    disabled={!address?.id && addressCount >= 3}
+                                />
+                                <span className="ml-2 text-gray-700">Work</span>
+                            </label>
+                        </div>
                         {errors.addressType && <p className="mt-1 text-sm text-red-600">{errors.addressType}</p>}
                     </div>
                 </div>
 
-                <div className="space-y-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Full Address *
-                    </label>
-                    <textarea
-                        name="address"
-                        value={formData.address}
-                        onChange={handleChange}
-                        rows={3}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition-colors ${errors.address ? 'border-red-300' : 'border-gray-300'}`}
-                        placeholder="Enter complete address"
-                        disabled={!address?.id && addressCount >= 3}
-                    />
-                    {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
-                </div>
 
                 <div className="flex justify-end gap-4 pt-6">
                     <button
@@ -368,10 +465,11 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                         Cancel
                     </button>
                     <button
-                        type="submit"
+                        type="button"
+                        onClick={handleSubmit}
                         className={`px-6 py-2 rounded-lg font-medium transition-colors ${(!address?.id && addressCount >= 3) || isSubmitting
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                : 'bg-amber-600 hover:bg-amber-700 text-white'
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-amber-600 hover:bg-amber-700 text-white'
                             }`}
                         disabled={(!address?.id && addressCount >= 3) || isSubmitting}
                     >
@@ -387,7 +485,7 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                         )}
                     </button>
                 </div>
-            </form>
+            </div>
         </div>
     );
 }

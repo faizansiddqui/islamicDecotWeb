@@ -73,11 +73,6 @@ export default function ProductInfo({
 
             {(() => {
                 const specs = specifications || [];
-                console.log('🔍 ProductInfo - Specifications:', {
-                    specifications,
-                    specsLength: specs.length,
-                    specs: specs
-                });
 
                 if (specs.length > 0) {
                     return (

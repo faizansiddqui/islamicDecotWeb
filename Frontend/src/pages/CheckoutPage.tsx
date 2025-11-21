@@ -20,6 +20,7 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('credit');
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
 
@@ -131,14 +132,10 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
     setIsProcessing(true);
 
     try {
-      console.log('Creating orders for cart items:', cartItems);
-      console.log('Selected address ID:', selectedAddressId);
-      console.log('User ID:', userId);
 
       // For now, we'll create one order per item in the cart
       // In a real application, you might want to create a single order with multiple items
       const orderPromises = cartItems.map(item => {
-        console.log('Creating order for item:', item);
         return userAPI.createOrder({
           quantity: item.quantity,
           address_id: selectedAddressId,
@@ -148,7 +145,11 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
 
       // Wait for all orders to be created
       const results = await Promise.all(orderPromises);
-      console.log('Order creation results:', results);
+
+      // Get the first order ID for redirect (in a real app, you might want to handle multiple orders differently)
+      if (results.length > 0 && results[0].data && results[0].data.order && results[0].data.order.order_id) {
+        setOrderId(results[0].data.order.order_id);
+      }
 
       // Clear the cart after successful order creation
       clearCart();
@@ -165,7 +166,7 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
     if (onBack) {
       onBack();
     } else {
-      window.location.hash = '#/cart';
+      window.location.hash = '/cart';
     }
   };
 
@@ -177,7 +178,7 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
   };
 
   if (orderPlaced) {
-    return <OrderSuccess onContinueShopping={handleContinueShopping} />;
+    return <OrderSuccess onContinueShopping={handleContinueShopping} orderId={orderId || undefined} />;
   }
 
   // Show loading while checking authentication

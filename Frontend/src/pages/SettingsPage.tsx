@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { userAPI } from '../services/api';
 import AddressForm from '../components/AddressForm';
 import { Settings, LogOut, Shield, Globe, ArrowLeft, MapPin, Plus, Edit } from 'lucide-react';
+import { navigateTo } from '../utils/navigation';
 
 interface SettingsPageProps {
   onBack?: () => void;
@@ -117,9 +118,29 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
               <h2 className="text-2xl font-bold text-gray-900">Privacy & Security</h2>
             </div>
             <div className="space-y-4">
-              <button className="w-full text-left px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              <button
+                onClick={() => navigateTo('/privacy')}
+                className="w-full text-left px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
                 <p className="font-medium text-gray-900">Privacy Policy</p>
                 <p className="text-sm text-gray-500">Read our privacy policy</p>
+              </button>
+            </div>
+          </div>
+
+          {/* Terms & Policy */}
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <Shield className="text-amber-700" size={24} />
+              <h2 className="text-2xl font-bold text-gray-900">Terms & Policy</h2>
+            </div>
+            <div className="space-y-4">
+              <button
+                onClick={() => navigateTo('/terms')}
+                className="w-full text-left px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <p className="font-medium text-gray-900">Terms of Service</p>
+                <p className="text-sm text-gray-500">Read our terms of service</p>
               </button>
             </div>
           </div>

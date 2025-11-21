@@ -12,9 +12,10 @@ interface ProductCardProps {
   onClick: () => void;
   badge?: 'new' | 'bestseller' | null;
   oldPrice?: number;
+  disableHover?: boolean;
 }
 
-export default function ProductCard({ id, name, price, image, category, inStock, onClick, badge, oldPrice }: ProductCardProps) {
+export default function ProductCard({ id, name, price, image, category, inStock, onClick, badge, oldPrice, disableHover = false }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const { addToCart } = useCart();
@@ -34,22 +35,24 @@ export default function ProductCard({ id, name, price, image, category, inStock,
 
   const handleGoToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    window.location.hash = '/cart';
+    window.location.pathname = '/cart';
   };
+
+  // Only apply hover effects if not disabled
+  const shouldApplyHover = !disableHover;
 
   return (
     <div
-      className="group bg-white rounded-lg xs:rounded-xl shadow-md overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 sm:hover:-translate-y-2"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={`group bg-white rounded-lg xs:rounded-xl shadow-md overflow-hidden cursor-pointer ${shouldApplyHover ? 'sm:transition-all sm:duration-300 sm:hover:shadow-2xl sm:hover:-translate-y-1 sm:hover:-translate-y-2' : ''}`}
+      onMouseEnter={() => shouldApplyHover && setIsHovered(true)}
+      onMouseLeave={() => shouldApplyHover && setIsHovered(false)}
       onClick={onClick}
     >
       <div className="relative overflow-hidden aspect-square">
         <img
           src={image}
           alt={name}
-          className={`w-full h-full object-cover transition-transform duration-500 ${isHovered ? 'scale-110' : 'scale-100'
-            }`}
+          className={`w-full h-full object-cover ${shouldApplyHover ? 'sm:transition-transform sm:duration-500' : ''} ${isHovered && shouldApplyHover ? 'sm:scale-110' : 'sm:scale-100'}`}
           loading="lazy"
         />
 
@@ -70,21 +73,20 @@ export default function ProductCard({ id, name, price, image, category, inStock,
               {badge === 'new' ? 'New' : 'Bestseller'}
             </span>
           )}
-          <span className="bg-amber-700 text-white px-1.5 xs:px-2 sm:px-3 py-0.5 xs:py-1 rounded-full text-[8px] xs:text-[9px] sm:text-xs font-semibold">
-            {category}
-          </span>
+          {category && (
+            <span className="bg-amber-700 text-white px-1.5 xs:px-2 sm:px-3 py-0.5 xs:py-1 rounded-full text-[8px] xs:text-[9px] sm:text-xs font-semibold">
+              {category}
+            </span>
+          )}
         </div>
 
-
-
         <div
-          className={`hidden sm:block absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2 xs:p-3 sm:p-4 transition-all duration-300 ${isHovered || addedToCart ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
-            }`}
+          className={`hidden sm:block absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2 xs:p-3 sm:p-4 ${shouldApplyHover ? 'sm:transition-all sm:duration-300' : ''} ${isHovered || addedToCart ? 'sm:translate-y-0 sm:opacity-100' : 'sm:translate-y-full sm:opacity-0'}`}
         >
           {addedToCart ? (
             <button
               onClick={handleGoToCart}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 xs:py-2 rounded-lg font-semibold flex items-center justify-center gap-1 xs:gap-2 transition-colors text-xs xs:text-sm"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 xs:py-2 rounded-lg font-semibold flex items-center justify-center gap-1 xs:gap-2 sm:transition-colors text-xs xs:text-sm"
             >
               Go to Cart
               <ArrowRight size={14} className="xs:w-4 xs:h-4" />
@@ -92,7 +94,7 @@ export default function ProductCard({ id, name, price, image, category, inStock,
           ) : (
             <button
               onClick={handleAddToCart}
-              className="w-full bg-amber-700 hover:bg-amber-800 text-white py-1.5 xs:py-2 rounded-lg font-semibold flex items-center justify-center gap-1 xs:gap-2 transition-colors text-xs xs:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-amber-700 hover:bg-amber-800 text-white py-1.5 xs:py-2 rounded-lg font-semibold flex items-center justify-center gap-1 xs:gap-2 sm:transition-colors text-xs xs:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!inStock}
             >
               <ShoppingCart size={14} className="xs:w-4 xs:h-4" />
@@ -103,7 +105,7 @@ export default function ProductCard({ id, name, price, image, category, inStock,
       </div>
 
       <div className="p-2 xs:p-2.5 sm:p-3 lg:p-4">
-        <h3 className="font-semibold text-[10px] xs:text-xs sm:text-sm text-gray-900 mb-1 xs:mb-1.5 sm:mb-2 line-clamp-2 group-hover:text-amber-700 transition-colors min-h-[2rem] xs:min-h-[2.25rem] sm:min-h-[2.5rem]">
+        <h3 className={`font-semibold text-[10px] xs:text-xs sm:text-sm text-gray-900 mb-1 xs:mb-1.5 sm:mb-2 line-clamp-2 min-h-[2rem] xs:min-h-[2.25rem] sm:min-h-[2.5rem] ${shouldApplyHover ? 'sm:group-hover:text-amber-700 sm:transition-colors' : ''}`}>
           {name}
         </h3>
         <div className="flex flex-col gap-1">

@@ -1,4 +1,5 @@
 import { Star, ArrowRight, Sparkles } from 'lucide-react';
+import { navigateTo } from '../../utils/navigation';
 
 export default function Hero() {
   return (
@@ -55,8 +56,8 @@ export default function Hero() {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
               <button
-                onClick={() => window.location.hash = '#/categories'}
-                className="group w-full sm:w-auto bg-amber-700 hover:bg-amber-800 text-white px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-lg text-sm sm:text-base lg:text-lg font-semibold transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                onClick={() => navigateTo('/categories')}
+                className="group w-full sm:w-auto bg-amber-700 hover:bg-amber-800 text-white px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-lg text-sm sm:text-base lg:text-lg font-semibold transition-all sm:transform sm:hover:scale-105 shadow-lg sm:hover:shadow-xl flex items-center justify-center gap-2"
               >
                 Shop Now
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -66,7 +67,7 @@ export default function Hero() {
                   const bestSellersSection = document.querySelector('[data-section="bestsellers"]');
                   bestSellersSection?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="w-full sm:w-auto bg-white hover:bg-gray-50 text-amber-700 border-2 border-amber-700 px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-lg text-sm sm:text-base lg:text-lg font-semibold transition-all transform hover:scale-105 shadow-md"
+                className="w-full sm:w-auto bg-white hover:bg-gray-50 text-amber-700 border-2 border-amber-700 px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-lg text-sm sm:text-base lg:text-lg font-semibold transition-all sm:transform sm:hover:scale-105 shadow-md"
               >
                 View Best Sellers
               </button>

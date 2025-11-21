@@ -49,9 +49,7 @@ export default function ProductDetails({ productId, onClose }: ProductDetailsPro
     setIsLoading(true);
     setError('');
     try {
-      console.log(`🔵 Loading product ${productId}...`);
       const response = await productAPI.getProductById(productId);
-      console.log('🟢 Product loaded:', response.data);
 
       if (response.data.status === 200 && response.data.data && response.data.data.length > 0) {
         setProduct(response.data.data[0]);

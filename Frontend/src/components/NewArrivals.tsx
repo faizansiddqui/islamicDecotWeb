@@ -87,7 +87,7 @@ export default function NewArrivals({ onProductClick }: NewArrivalsProps) {
                             <div
                                 key={product.product_id}
                                 onClick={() => onProductClick(product.product_id)}
-                                className="group cursor-pointer bg-white rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-200"
+                                className="group cursor-pointer bg-white rounded-lg overflow-hidden sm:hover:shadow-xl sm:transition-all sm:duration-300 sm:transform sm:hover:-translate-y-1 border border-gray-200"
                             >
                                 <div className="relative aspect-square overflow-hidden bg-gray-100">
                                     <div className="absolute top-2 left-2 z-10">
@@ -99,7 +99,7 @@ export default function NewArrivals({ onProductClick }: NewArrivalsProps) {
                                     <img
                                         src={imageUrl}
                                         alt={product.name || product.title || 'Product'}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        className="w-full h-full object-cover sm:group-hover:scale-110 sm:transition-transform sm:duration-500"
                                         loading="lazy"
                                         onError={(e) => {
                                             (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400?text=No+Image';
@@ -114,7 +114,7 @@ export default function NewArrivals({ onProductClick }: NewArrivalsProps) {
                                         ))}
                                     </div>
 
-                                    <h3 className="text-xs sm:text-sm text-gray-900 font-medium mb-2 line-clamp-2 min-h-[2rem] group-hover:text-amber-700 transition-colors">
+                                    <h3 className="text-xs sm:text-sm text-gray-900 font-medium mb-2 line-clamp-2 min-h-[2rem] sm:group-hover:text-amber-700 sm:transition-colors">
                                         {product.name || product.title || 'Product'}
                                     </h3>
 
@@ -141,8 +141,8 @@ export default function NewArrivals({ onProductClick }: NewArrivalsProps) {
 
                 <div className="text-center mt-10">
                     <button
-                        onClick={() => window.location.hash = '#/categories'}
-                        className="bg-amber-700 hover:bg-amber-800 text-white px-8 py-3 text-sm sm:text-base font-semibold transition-all transform hover:scale-105 uppercase tracking-wide rounded-lg shadow-lg"
+                        onClick={() => window.location.pathname = '/categories'}
+                        className="bg-amber-700 hover:bg-amber-800 text-white px-8 py-3 text-sm sm:text-base font-semibold transition-all sm:transform sm:hover:scale-105 uppercase tracking-wide rounded-lg shadow-lg"
                     >
                         Explore All New Items
                     </button>

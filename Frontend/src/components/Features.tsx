@@ -37,9 +37,9 @@ export default function Features() {
                         return (
                             <div
                                 key={index}
-                                className="group bg-white rounded-xl p-6 text-center hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
+                                className="group bg-white rounded-xl p-6 text-center sm:hover:shadow-xl sm:transition-all sm:duration-300 sm:transform sm:hover:-translate-y-2 border border-gray-100"
                             >
-                                <div className={`inline-flex p-4 rounded-full ${feature.color} mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                                <div className={`inline-flex p-4 rounded-full ${feature.color} mb-4 sm:group-hover:scale-110 sm:transition-transform sm:duration-300`}>
                                     <Icon size={32} />
                                 </div>
                                 <h3 className="text-lg font-bold text-gray-900 mb-2">

@@ -1,11 +1,10 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Search } from 'lucide-react';
 import { productAPI } from '../services/api';
 import ProductCard from '../components/Product/ProductCard';
 import ProductDetails from '../components/Product/ProductDetails';
 import Navbar from '../components/Navbar/Navbar';
 import Footer from '../components/Footer/Footer';
-import SearchSuggestions from '../components/Search/SearchSuggestions';
 import { Product, getImageUrl, isProductNew, isProductBestSeller } from '../utils/productUtils';
 
 interface SearchPageProps {
@@ -17,10 +16,8 @@ export default function SearchPage({ onBack }: SearchPageProps) {
     const [products, setProducts] = useState<Product[]>([]);
     const [suggestions, setSuggestions] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [showSuggestions, setShowSuggestions] = useState(false);
     const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
     const [hasSearched, setHasSearched] = useState(false);
-    const searchContainerRef = useRef<HTMLDivElement>(null);
 
     // Load all products for suggestions
     useEffect(() => {
@@ -38,6 +35,16 @@ export default function SearchPage({ onBack }: SearchPageProps) {
         loadAllProducts();
     }, []);
 
+    // Auto-perform search when component loads with a query parameter from navbar
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const query = urlParams.get('q');
+        if (query) {
+            setSearchQuery(query);
+            performSearch(query);
+        }
+    }, []);
+
     const performSearch = async (query: string) => {
         if (!query.trim()) {
             setProducts([]);
@@ -47,12 +54,9 @@ export default function SearchPage({ onBack }: SearchPageProps) {
 
         setIsLoading(true);
         setHasSearched(true);
-        setShowSuggestions(false);
 
         try {
-            console.log('🔵 Searching for:', query);
             const response = await productAPI.searchProduct(query);
-            console.log('🟢 Search results:', response.data);
 
             if (response.data.status && Array.isArray(response.data.products)) {
                 setProducts(response.data.products);
@@ -63,8 +67,11 @@ export default function SearchPage({ onBack }: SearchPageProps) {
                 const queryLower = query.toLowerCase();
                 const filtered = suggestions.filter((product) => {
                     const name = (product.name || product.title || '').toLowerCase();
+                    const description = (product.description || '').toLowerCase();
                     const category = product.Catagory?.name?.toLowerCase() || '';
-                    return name.includes(queryLower) || category.includes(queryLower);
+                    return name.includes(queryLower) ||
+                        description.includes(queryLower) ||
+                        category.includes(queryLower);
                 });
                 setProducts(filtered);
             }
@@ -74,86 +81,17 @@ export default function SearchPage({ onBack }: SearchPageProps) {
             const queryLower = query.toLowerCase();
             const filtered = suggestions.filter((product) => {
                 const name = (product.name || product.title || '').toLowerCase();
+                const description = (product.description || '').toLowerCase();
                 const category = product.Catagory?.name?.toLowerCase() || '';
-                return name.includes(queryLower) || category.includes(queryLower);
+                return name.includes(queryLower) ||
+                    description.includes(queryLower) ||
+                    category.includes(queryLower);
             });
             setProducts(filtered);
         } finally {
             setIsLoading(false);
         }
     };
-
-    // Get search query from URL hash
-    useEffect(() => {
-        const hash = window.location.hash;
-        if (hash.startsWith('#/search')) {
-            const queryMatch = hash.match(/[?&]q=([^&]*)/);
-            if (queryMatch) {
-                const query = decodeURIComponent(queryMatch[1] || '');
-                setSearchQuery(query);
-                if (query.trim() && suggestions.length > 0) {
-                    // Use setTimeout to ensure performSearch is available
-                    setTimeout(() => {
-                        performSearch(query);
-                    }, 0);
-                }
-            }
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [suggestions.length]);
-
-    const getFilteredSuggestions = useMemo(() => {
-        if (!searchQuery.trim() || searchQuery.length < 2) {
-            return [];
-        }
-        const query = searchQuery.toLowerCase();
-        return suggestions.filter((product) => {
-            const name = (product.name || product.title || '').toLowerCase();
-            const category = product.Catagory?.name?.toLowerCase() || '';
-            return name.includes(query) || category.includes(query);
-        }).slice(0, 10);
-    }, [searchQuery, suggestions]);
-
-    const handleSearchChange = (value: string) => {
-        setSearchQuery(value);
-        setShowSuggestions(value.trim().length >= 2);
-        if (!value.trim()) {
-            setHasSearched(false);
-            setProducts([]);
-        }
-    };
-
-    const handleSearchSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const trimmedQuery = searchQuery.trim();
-        if (trimmedQuery) {
-            performSearch(trimmedQuery);
-            // Update URL
-            window.location.hash = `#/search?q=${encodeURIComponent(trimmedQuery)}`;
-        }
-    };
-
-    const handleSuggestionSelect = (productId: number) => {
-        setSelectedProductId(productId);
-        setShowSuggestions(false);
-    };
-
-    // Close suggestions when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
-                setShowSuggestions(false);
-            }
-        };
-
-        if (showSuggestions) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [showSuggestions]);
 
     const handleProductClick = (productId: number) => {
         setSelectedProductId(productId);
@@ -173,43 +111,13 @@ export default function SearchPage({ onBack }: SearchPageProps) {
                             <ArrowLeft size={20} />
                             <span className="font-medium">Back</span>
                         </button>
-                        <h1 className="text-xl font-bold text-gray-900">Search Products</h1>
+                        <h1 className="text-xl font-bold text-gray-900">Search Results</h1>
                         <div className="w-20"></div>
                     </div>
                 </div>
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                {/* Search Bar */}
-                <div className="mb-6" ref={searchContainerRef}>
-                    <form onSubmit={handleSearchSubmit} className="relative">
-                        <div className="relative">
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => handleSearchChange(e.target.value)}
-                                onFocus={() => setShowSuggestions(searchQuery.trim().length >= 2)}
-                                placeholder="Search for products..."
-                                className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-base"
-                                autoFocus
-                            />
-                            <button
-                                type="submit"
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-amber-700 transition-colors"
-                            >
-                                <Search size={20} />
-                            </button>
-                        </div>
-                        {showSuggestions && (
-                            <SearchSuggestions
-                                suggestions={getFilteredSuggestions}
-                                onSelect={handleSuggestionSelect}
-                                searchQuery={searchQuery}
-                            />
-                        )}
-                    </form>
-                </div>
-
                 {/* Search Results */}
                 {isLoading ? (
                     <div className="flex items-center justify-center py-12">
@@ -254,6 +162,7 @@ export default function SearchPage({ onBack }: SearchPageProps) {
                                                 onClick={() => handleProductClick(product.product_id)}
                                                 badge={badge}
                                                 oldPrice={oldPrice}
+                                                disableHover={true}
                                             />
                                         );
                                     })}
@@ -271,7 +180,7 @@ export default function SearchPage({ onBack }: SearchPageProps) {
                                             <div
                                                 key={product.product_id}
                                                 onClick={() => handleProductClick(product.product_id)}
-                                                className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transition-all hover:shadow-xl flex flex-row gap-3 p-3"
+                                                className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transition-all flex flex-row gap-3 p-3"
                                             >
                                                 <div className="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
                                                     <img
@@ -347,7 +256,7 @@ export default function SearchPage({ onBack }: SearchPageProps) {
                     <div className="text-center py-12 bg-white rounded-lg">
                         <Search size={64} className="mx-auto text-gray-300 mb-4" />
                         <p className="text-gray-600 text-lg mb-2">Start searching for products</p>
-                        <p className="text-gray-500 text-sm">Type a product name and press Enter to search</p>
+                        <p className="text-gray-500 text-sm">Use the search bar above to search for products</p>
                     </div>
                 )}
             </div>
@@ -364,4 +273,3 @@ export default function SearchPage({ onBack }: SearchPageProps) {
         </div>
     );
 }
-

@@ -1,4 +1,5 @@
-import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from 'lucide-react';
+import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin } from 'lucide-react';
+import { navigateTo } from '../../utils/navigation';
 
 export default function Footer() {
   return (
@@ -13,25 +14,48 @@ export default function Footer() {
               Bringing spiritual beauty to your home with premium Abdulla Islamic Store and decor.
             </p>
             <div className="flex gap-2 xs:gap-3">
-              <button className="p-1.5 xs:p-2 bg-gray-800 hover:bg-amber-700 rounded-full transition-colors">
+              <a
+                href="https://www.facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 xs:p-2 bg-gray-800 hover:bg-amber-700 rounded-full transition-colors"
+              >
                 <Facebook size={16} className="xs:w-5 xs:h-5" />
-              </button>
-              <button className="p-1.5 xs:p-2 bg-gray-800 hover:bg-amber-700 rounded-full transition-colors">
+              </a>
+              <a
+                href="https://www.instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 xs:p-2 bg-gray-800 hover:bg-amber-700 rounded-full transition-colors"
+              >
                 <Instagram size={16} className="xs:w-5 xs:h-5" />
-              </button>
-              <button className="p-1.5 xs:p-2 bg-gray-800 hover:bg-amber-700 rounded-full transition-colors">
+              </a>
+              <a
+                href="https://www.twitter.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 xs:p-2 bg-gray-800 hover:bg-amber-700 rounded-full transition-colors"
+              >
                 <Twitter size={16} className="xs:w-5 xs:h-5" />
-              </button>
+              </a>
+              <a
+                href="https://www.youtube.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 xs:p-2 bg-gray-800 hover:bg-amber-700 rounded-full transition-colors"
+              >
+                <Youtube size={16} className="xs:w-5 xs:h-5" />
+              </a>
             </div>
           </div>
 
           <div>
             <h4 className="text-white font-semibold mb-2 xs:mb-3 sm:mb-4 text-xs xs:text-sm sm:text-base">Shop</h4>
             <ul className="space-y-1 xs:space-y-1.5 sm:space-y-2">
-              <li><a href="#/categories" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">All Categories</a></li>
-              <li><a href="#/categories" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">Kiswah Collection</a></li>
-              <li><a href="#/categories" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">Islamic Arts</a></li>
-              <li><a href="#/categories" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">Hijab</a></li>
+              <li><a href="/categories" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">All Categories</a></li>
+              <li><a href="/categories" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">Kiswah Collection</a></li>
+              <li><a href="/categories" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">Islamic Arts</a></li>
+              <li><a href="/categories" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">Hijab</a></li>
               <li><a href="/" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">New Arrivals</a></li>
             </ul>
           </div>
@@ -39,11 +63,11 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-2 xs:mb-3 sm:mb-4 text-xs xs:text-sm sm:text-base">Customer Service</h4>
             <ul className="space-y-1 xs:space-y-1.5 sm:space-y-2">
-              <li><a href="#/contact" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">Contact Us</a></li>
-              <li><a href="#/shipping" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">Shipping Info</a></li>
-              <li><a href="#/returns" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">Returns & Exchanges</a></li>
-              <li><a href="#/faq" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">FAQ</a></li>
-              <li><a href="#/orders" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">Track Order</a></li>
+              <li><a href="/contact" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">Contact Us</a></li>
+              <li><a href="/shipping" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">Shipping Info</a></li>
+              <li><a href="/returns" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">Returns & Exchanges</a></li>
+              <li><a href="/faq" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">FAQ</a></li>
+              <li><a href="/orders" className="hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm">Track Order</a></li>
             </ul>
           </div>
 
@@ -56,17 +80,32 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-1.5 xs:gap-2">
                 <Phone size={14} className="xs:w-4 xs:h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                <span className="text-[10px] xs:text-xs sm:text-sm">+91 (740) 809-7278</span>
+                <a href="tel:+917408097278" className="text-[10px] xs:text-xs sm:text-sm hover:text-amber-400 transition-colors">+91 (740) 809-7278</a>
               </li>
               <li className="flex items-center gap-1.5 xs:gap-2">
                 <Mail size={14} className="xs:w-4 xs:h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                <span className="text-[10px] xs:text-xs sm:text-sm">info@abdullaislamicstore.com</span>
+                <a href="mailto:info@abdullaislamicstore.com" className="text-[10px] xs:text-xs sm:text-sm hover:text-amber-400 transition-colors">info@abdullaislamicstore.com</a>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-gray-800 pt-4 xs:pt-6 sm:pt-8 text-center">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-4">
+            <button
+              onClick={() => navigateTo('/privacy')}
+              className="text-gray-400 hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm"
+            >
+              Privacy Policy
+            </button>
+            <span className="text-gray-600 hidden sm:inline">|</span>
+            <button
+              onClick={() => navigateTo('/terms')}
+              className="text-gray-400 hover:text-amber-400 transition-colors text-[10px] xs:text-xs sm:text-sm"
+            >
+              Terms of Service
+            </button>
+          </div>
           <p className="text-gray-400 text-[10px] xs:text-xs sm:text-sm">
             © 2024 Abdulla Islamic Store. All rights reserved.
           </p>
