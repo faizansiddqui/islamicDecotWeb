@@ -236,8 +236,28 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
             onSubmit(formData);
         } catch (error: unknown) {
             console.error('Error saving address:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Failed to save address. Please try again.';
-            setErrors({ form: errorMessage });
+
+            // Handle specific error cases for phone number conflicts
+            if (error instanceof Error) {
+                // Check if it's a duplicate phone number error
+                if (error.message.includes('phone number already exists') ||
+                    error.message.includes('already exist') ||
+                    error.message.includes('duplicate') ||
+                    error.message.includes('unique constraint')) {
+                    // Set error specifically for phone1 field
+                    setErrors(prev => ({
+                        ...prev,
+                        phone1: 'Number already exist',
+                        form: '' // Clear general form error
+                    }));
+                } else {
+                    // For all other errors, show a generic message
+                    setErrors(prev => ({ ...prev, form: 'Failed to save address. Please try again.' }));
+                }
+            } else {
+                // For non-Error objects, show a generic message
+                setErrors(prev => ({ ...prev, form: 'Failed to save address. Please try again.' }));
+            }
         } finally {
             setIsSubmitting(false);
         }

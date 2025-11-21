@@ -131,13 +131,72 @@ export const userAPI = {
         }
         throw error;
     }),
-    createAddress: async (address: unknown) => await api.post('/user/create-newAddress', address),
-    updateAddress: async (addressId: number, address: Record<string, unknown>) => await api.patch('/user/update-user-address', { address_id: addressId, ...address }).catch((error) => {
-        if (error.response?.status === 404) {
-            throw new Error('Update address endpoint not available.');
+    createAddress: async (address: unknown) => {
+        try {
+            const response = await api.post('/user/create-newAddress', address);
+            return response;
+        } catch (error) {
+            console.error('Error creating address:', error);
+
+            // If we have response data with a specific error message, use that
+            if (typeof error === 'object' && error !== null && 'response' in error) {
+                const apiError = error as { response?: { data?: { message?: string; error?: string }, status?: number } };
+                if (apiError.response?.data?.message) {
+                    // Check if it's a duplicate phone number error
+                    if (apiError.response.data.message.includes('phone') &&
+                        (apiError.response.data.message.includes('already') ||
+                            apiError.response.data.message.includes('exist') ||
+                            apiError.response.data.message.includes('unique'))) {
+                        throw new Error('An address with this phone number already exists.');
+                    } else {
+                        throw new Error(apiError.response.data.message);
+                    }
+                } else if (apiError.response?.data?.error) {
+                    throw new Error(apiError.response.data.error);
+                } else if (apiError.response?.status === 500) {
+                    // Handle 500 errors specifically for phone number conflicts
+                    throw new Error('An address with this phone number already exists.');
+                }
+            }
+
+            // Re-throw the original error if we can't provide a better one
+            throw error;
         }
-        throw error;
-    }),
+    },
+
+    updateAddress: async (addressId: number, address: Record<string, unknown>) => {
+        try {
+            const response = await api.patch('/user/update-user-address', { address_id: addressId, ...address });
+            return response;
+        } catch (error) {
+            console.error('Error updating address:', error);
+
+            // If we have response data with a specific error message, use that
+            if (typeof error === 'object' && error !== null && 'response' in error) {
+                const apiError = error as { response?: { data?: { message?: string; error?: string }, status?: number } };
+                if (apiError.response?.data?.message) {
+                    // Check if it's a duplicate phone number error
+                    if (apiError.response.data.message.includes('phone') &&
+                        (apiError.response.data.message.includes('already') ||
+                            apiError.response.data.message.includes('exist') ||
+                            apiError.response.data.message.includes('unique'))) {
+                        throw new Error('An address with this phone number already exists.');
+                    } else {
+                        throw new Error(apiError.response.data.message);
+                    }
+                } else if (apiError.response?.data?.error) {
+                    throw new Error(apiError.response.data.error);
+                } else if (apiError.response?.status === 500) {
+                    // Handle 500 errors specifically for phone number conflicts
+                    throw new Error('An address with this phone number already exists.');
+                }
+            }
+
+            // Re-throw the original error if we can't provide a better one
+            throw error;
+        }
+    },
+
     createOrder: (orderData: { quantity: number; address_id: number; product_id: number }) => {
         // Get user ID from localStorage
         const user = localStorage.getItem('user');
