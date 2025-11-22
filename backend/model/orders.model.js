@@ -45,13 +45,25 @@ export const Orders = connection.define("Orders", {
     allowNull: false,
   },
   status: {
-    type: DataTypes.ENUM("ongoing" , "confirm" ,"rto", "reject" , "delivered"),
-    defaultValue: "confirm",
+    type: DataTypes.ENUM("pending" , "confirm" ,"rto", "reject" , "delivered"),
+    defaultValue: "pending",
   },
   quantity:{
     type:DataTypes.INTEGER,
     allowNull:false,
     defaultValue:1,
+  },
+  razorpay_order_id:{
+    type:DataTypes.STRING,
+    allowNull:false
+  },
+  totalAmount:{
+    type:DataTypes.STRING, //IN PAISE
+    allowNull:false
+  },
+  payment_status:{
+    type:DataTypes.ENUM('paid','pending'),
+    defaultValue:'pending'
   }
 });
 

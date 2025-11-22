@@ -5,6 +5,7 @@ import { v4 } from "uuid";
 import { User } from "../model/user.model.js";
 import Addresses from "../model/addresses.model.js";
 import AddToCart from "../model/addToCart.model.js";
+import { razorpay } from "../config/razorpay.js";
 import { Transaction } from "sequelize";
 
 const getProductByCatagory = async (req, res) => {
@@ -110,55 +111,135 @@ const order = async (req, res) => {
       //frontend address create krke dobara ye route hit krega
     }
 
-    // console.log(userAddess.dataValues);
 
-    const payload = {
-      order_id: v4(),
-      user_id: decode_user,
-      ...userAddess.dataValues,
-      product_id,
-      quantity,
-    };
+  
 
     const product = await Products.findOne({
-      attributes: ["quantity"],
+      attributes: ["quantity","selling_price"],
       where: { product_id },
     });
 
     // Check product exists
     if (!product) {
       return res.status(404).json({ msg: "Product not found" });
-    }
+    }   
 
     // Check requested quantity valid
-    if (product.quantity < quantity) {
-      return res
-        .status(400)
-        .json({ msg: "Cannot create order with this quantity" });
+
+    const qty = parseInt(quantity, 10);
+    if (isNaN(qty) || qty <= 0) return res.status(400).json({ msg: "Invalid quantity" });
+
+    if (product.quantity < qty) {
+      return res.status(400).json({ msg: "Requested quantity not available" });
     }
 
-    // Subtract product quantity
-    const newQty = product.quantity - quantity;
+    const subtotal = parseFloat(product.selling_price) * qty; // rupees
+    const amountPaise = Math.round(subtotal * 100); // in paise
 
-    // Now update in DB
-    await Products.update(
-      { quantity: newQty },
-      { where: { product_id } },
-      { Transaction }
-    );
+    const localOrderId = v4();
+    
 
-    //CREATE USER ORDER
+     // Create Razorpay order
+    const rOrder =  await razorpay.orders.create({
+      amount: amountPaise,
+      currency: "INR",
+      receipt: localOrderId,
+      payment_capture: 1, // auto-capture; set to 0 if you want manual capture
+    });
+
+
+    //ORDER PAYLOAD
+      const payload = {
+      order_id: localOrderId,
+      user_id: decode_user,
+      ...userAddess.dataValues,
+      product_id,
+      quantity:qty,
+      razorpay_order_id:rOrder.id,
+      totalAmount:amountPaise
+    };
+ 
+   
+
+    // //CREATE USER ORDER
     await Orders.create(payload);
 
-    res
-      .status(200)
-      .json({ status: true, message: "Order Created Successfully" });
+    // Return order info to client (client will open checkout)
+    return res.status(200).json({
+      status: true,
+      razorpay_order: rOrder,
+      local_order_id: localOrderId,
+      key: process.env.RAZORPAY_KEY_ID,
+    });
   } catch (error) {
     console.log(error);
 
     return res.status(500).json({ error: "Cannot create error try again" });
   }
 };
+
+
+export const verifyPayment = async (req, res) => {
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      order_id, // your local order id (receipt)
+    } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !order_id) {
+      return res.status(400).json({ message: "Missing fields" });
+    }
+
+    // Verify signature
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest("hex");
+
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({ message: "Invalid signature" });
+    }
+
+    // Find local order
+    const orderData = await Orders.findOne({ where: { order_id } });
+    if (!orderData) return res.status(404).json({ message: "Order not found" });
+
+    // Idempotency: if already paid, return success
+    if (orderData.payment_status === "PAID") {
+      return res.json({ success: true, message: "Already marked PAID" });
+    }
+
+    // Use transaction to update stock + order atomically
+    await sequelize.transaction(async (t) => {
+      const product = await Products.findOne({ where: { product_id: orderData.product_id }, transaction: t, lock: t.LOCK.UPDATE });
+
+      if (!product) throw new Error("Product missing");
+
+      if (product.quantity < orderData.quantity) {
+        throw new Error("Insufficient stock at moment of verification");
+      }
+
+      // reduce stock
+      const newQty = product.quantity - orderData.quantity;
+      await Products.update({ quantity: newQty }, { where: { product_id: product.product_id }, transaction: t });
+
+      // Update order status
+      await Orders.update(
+        { payment_status: "PAID", razorpay_payment_id },
+        { where: { order_id }, transaction: t }
+      );
+    });
+
+    return res.json({ success: true, message: "Payment verified and stock updated" });
+  } catch (error) {
+    console.error("verifyPayment error:", error);
+    return res.status(500).json({ error: error.message || "Verification failed" });
+  }
+};
+
 
 const createAddress = async (req, res) => {
   const {
