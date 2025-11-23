@@ -158,8 +158,8 @@ export default function AddressSelector({ selectedAddressId, onAddressSelect }: 
                         <div
                             key={address.id}
                             className={`border rounded-xl p-5 cursor-pointer transition-all ${selectedAddressId === address.id
-                                    ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-100'
-                                    : 'border-gray-200 hover:shadow-sm'
+                                ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-100'
+                                : 'border-gray-200 hover:shadow-sm'
                                 }`}
                             onClick={() => address.id && onAddressSelect(address.id)}
                         >
@@ -224,7 +224,6 @@ export default function AddressSelector({ selectedAddressId, onAddressSelect }: 
                             address={editingAddress ? convertToLocalAddress(editingAddress) : undefined}
                             onSubmit={handleAddressSubmit}
                             onCancel={handleAddressCancel}
-                            addressCount={addresses.length}
                         />
                     </div>
                 </div>

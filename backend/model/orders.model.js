@@ -45,7 +45,7 @@ export const Orders = connection.define("Orders", {
     allowNull: false,
   },
   status: {
-    type: DataTypes.ENUM("pending" , "confirm" ,"rto", "reject" , "delivered"),
+    type: DataTypes.ENUM("pending" , "confirm" ,"rto", "reject" , "delivered","cancelled"),
     defaultValue: "pending",
   },
   quantity:{
@@ -64,7 +64,24 @@ export const Orders = connection.define("Orders", {
   payment_status:{
     type:DataTypes.ENUM('paid','pending'),
     defaultValue:'pending'
-  }
+  },
+    user_id: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    references: {
+      model: 'Users',
+      key: 'id'
+    }
+  },
+  product_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'Products',
+      key: 'product_id'
+    }
+  },
+
 });
 
 //ORDERS

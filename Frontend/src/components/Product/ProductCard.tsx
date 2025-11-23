@@ -1,6 +1,9 @@
 import { ShoppingCart, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import { useCart } from '../../context/CartContext';
+import WishlistButton from './WishlistButton';
+import { Product } from '../../utils/productUtils';
+import { navigateTo } from '../../utils/navigation';
 
 interface ProductCardProps {
   id: number;
@@ -9,16 +12,25 @@ interface ProductCardProps {
   image: string;
   category: string;
   inStock: boolean;
-  onClick: () => void;
   badge?: 'new' | 'bestseller' | null;
   oldPrice?: number;
   disableHover?: boolean;
 }
 
-export default function ProductCard({ id, name, price, image, category, inStock, onClick, badge, oldPrice, disableHover = false }: ProductCardProps) {
+export default function ProductCard({ id, name, price, image, category, inStock, badge, oldPrice, disableHover = false }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const { addToCart } = useCart();
+
+  // Create a product object for the wishlist button
+  const product: Product = {
+    product_id: id,
+    name: name,
+    price: price,
+    selling_price: price,
+    product_image: image,
+    quantity: inStock ? 10 : 0, // Just a placeholder quantity
+  };
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -35,7 +47,11 @@ export default function ProductCard({ id, name, price, image, category, inStock,
 
   const handleGoToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    window.location.pathname = '/cart';
+    navigateTo('/cart');
+  };
+
+  const handleProductClick = () => {
+    navigateTo(`/product/${id}`);
   };
 
   // Only apply hover effects if not disabled
@@ -46,7 +62,7 @@ export default function ProductCard({ id, name, price, image, category, inStock,
       className={`group bg-white rounded-lg xs:rounded-xl shadow-md overflow-hidden cursor-pointer ${shouldApplyHover ? 'sm:transition-all sm:duration-300 sm:hover:shadow-2xl sm:hover:-translate-y-1 sm:hover:-translate-y-2' : ''}`}
       onMouseEnter={() => shouldApplyHover && setIsHovered(true)}
       onMouseLeave={() => shouldApplyHover && setIsHovered(false)}
-      onClick={onClick}
+      onClick={handleProductClick}
     >
       <div className="relative overflow-hidden aspect-square">
         <img
@@ -78,6 +94,11 @@ export default function ProductCard({ id, name, price, image, category, inStock,
               {category}
             </span>
           )}
+        </div>
+
+        {/* Wishlist Button */}
+        <div className="absolute top-1.5 xs:top-2 sm:top-3 right-1.5 xs:right-2 sm:right-3">
+          <WishlistButton product={product} size="sm" />
         </div>
 
         <div

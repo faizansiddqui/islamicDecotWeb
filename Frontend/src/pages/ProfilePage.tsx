@@ -167,6 +167,43 @@ export default function ProfilePage({ onBack }: { onBack?: () => void }) {
 
                     {/* Profile Content */}
                     <div className="p-6">
+                        {/* Quick Links Section */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                            <button
+                                onClick={() => navigateTo('/orders')}
+                                className="bg-white border border-gray-200 rounded-xl p-4 text-left hover:shadow-md transition-all"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-amber-100 p-2 rounded-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900">My Orders</h3>
+                                        <p className="text-sm text-gray-500">View your order history</p>
+                                    </div>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => navigateTo('/wishlist')}
+                                className="bg-white border border-gray-200 rounded-xl p-4 text-left hover:shadow-md transition-all"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-amber-100 p-2 rounded-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900">My Wishlist</h3>
+                                        <p className="text-sm text-gray-500">View your saved items</p>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+
                         <div className="mb-8">
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-xl font-bold text-gray-900">Addresses</h2>
@@ -175,24 +212,12 @@ export default function ProfilePage({ onBack }: { onBack?: () => void }) {
                                         setEditingAddress(null);
                                         setShowAddressForm(true);
                                     }}
-                                    disabled={addresses.length >= 3}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${addresses.length >= 3
-                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                            : 'bg-amber-600 hover:bg-amber-700 text-white'
-                                        }`}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-amber-600 hover:bg-amber-700 text-white"
                                 >
                                     <Plus size={16} />
                                     Add Address
                                 </button>
                             </div>
-
-                            {addresses.length >= 3 && (
-                                <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 mb-4">
-                                    <p className="text-amber-700 text-sm">
-                                        You have reached the maximum limit of 3 addresses. You can edit existing addresses.
-                                    </p>
-                                </div>
-                            )}
 
                             {loading ? (
                                 <div className="flex justify-center py-8">
@@ -215,11 +240,7 @@ export default function ProfilePage({ onBack }: { onBack?: () => void }) {
                                             setEditingAddress(null);
                                             setShowAddressForm(true);
                                         }}
-                                        disabled={addresses.length >= 3}
-                                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${addresses.length >= 3
-                                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                : 'bg-amber-600 hover:bg-amber-700 text-white'
-                                            }`}
+                                        className="px-4 py-2 rounded-lg font-medium transition-colors bg-amber-600 hover:bg-amber-700 text-white"
                                     >
                                         Add Address
                                     </button>
@@ -294,7 +315,7 @@ export default function ProfilePage({ onBack }: { onBack?: () => void }) {
                             address={editingAddress || undefined}
                             onSubmit={handleAddressSubmit}
                             onCancel={handleAddressCancel}
-                            addressCount={addresses.length}
+                        // addressCount={addresses.length}
                         />
                     </div>
                 </div>

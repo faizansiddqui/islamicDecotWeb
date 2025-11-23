@@ -6,11 +6,10 @@ import { Product, getImageUrl, isProductNew, isProductBestSeller } from '../../u
 import { getCategories } from '../../data/categories';
 
 interface ProductGridProps {
-  onProductClick: (productId: number) => void;
   searchQuery?: string;
 }
 
-export default function ProductGrid({ onProductClick, searchQuery }: ProductGridProps) {
+export default function ProductGrid({ searchQuery }: ProductGridProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,7 +53,6 @@ export default function ProductGrid({ onProductClick, searchQuery }: ProductGrid
     setIsLoading(true);
     try {
       const response = await productAPI.getProductByCategory(categoryName);
-      console.log('Category products loaded:', response.data);
 
       if (response.data.status === 'ok' && response.data.data) {
         const categoryData = response.data.data;
@@ -280,7 +278,6 @@ export default function ProductGrid({ onProductClick, searchQuery }: ProductGrid
                     image={imageUrl}
                     category={product.Catagory?.name || ''}
                     inStock={product.quantity > 0}
-                    onClick={() => onProductClick(product.product_id)}
                     badge={badge}
                     oldPrice={oldPrice}
                   />

@@ -5,7 +5,6 @@ import BestSellers from './components/BestSellers';
 import NewArrivals from './components/NewArrivals';
 import Features from './components/Features';
 import ProductGrid from './components/Product/ProductGrid';
-import ProductDetails from './components/Product/ProductDetails';
 import Footer from './components/Footer/Footer';
 import AdminPage from './Admin/AdminPage';
 import CartPage from './pages/CartPage';
@@ -23,21 +22,24 @@ import OrderDetailsPage from './pages/OrderDetailsPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import SearchPage from './pages/SearchPage';
+import WishlistPage from './pages/WishlistPage';
+import ProductDetailsPage from './pages/ProductDetailsPage';
 import { useAdminAuth } from './context/AdminAuthContext';
 import { navigateTo } from './utils/navigation';
 // import AuthCallback from './pages/AuthCallback';
 
-
-type PageType = 'home' | 'admin' | 'cart' | 'checkout' | 'log' | 'verify' | 'profile' | 'orders' | 'order-details' | 'settings' | 'categories' | 'contact' | 'shipping' | 'returns' | 'faq' | 'wishlist' | 'auth-callback' | 'privacy' | 'terms' | 'search';
+type PageType = 'home' | 'admin' | 'cart' | 'checkout' | 'log' | 'verify' | 'profile' | 'orders' | 'order-details' | 'settings' | 'categories' | 'contact' | 'shipping' | 'returns' | 'faq' | 'wishlist' | 'auth-callback' | 'privacy' | 'terms' | 'search' | 'product-details';
 
 export default function App() {
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState<PageType>('home');
   const { isAdminLoggedIn, logout: adminLogout } = useAdminAuth();
 
   // State for order details
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
+  // State for product details
+  const [selectedProductDetailsId, setSelectedProductDetailsId] = useState<number | null>(null);
 
   // Track previous path to detect route changes
   const previousPathRef = useRef<string>(window.location.pathname);
@@ -86,10 +88,10 @@ export default function App() {
         if (productId) {
           const productIdNum = parseInt(productId, 10);
           if (!isNaN(productIdNum)) {
-            setSelectedProductId(productIdNum);
+            setSelectedProductDetailsId(productIdNum);
+            setCurrentPage('product-details');
           }
         }
-        setCurrentPage('home'); // Keep home page active but show product modal
       } else if (path === '/wishlist') {
         setCurrentPage('wishlist');
       } else if (path === '/settings') {
@@ -187,22 +189,23 @@ export default function App() {
     return <SearchPage onBack={() => navigateTo('/')} />;
   }
 
+  if (currentPage === 'wishlist') {
+    return <WishlistPage />;
+  }
+
+  if (currentPage === 'product-details' && selectedProductDetailsId) {
+    return <ProductDetailsPage productId={selectedProductDetailsId} />;
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar onSearchChange={setSearchQuery} />
       <Hero />
-      <BestSellers onProductClick={(id) => setSelectedProductId(id)} />
-      <NewArrivals onProductClick={(id) => setSelectedProductId(id)} />
-      <ProductGrid onProductClick={(id) => setSelectedProductId(id)} searchQuery={searchQuery} />
+      <BestSellers />
+      <NewArrivals />
+      <ProductGrid searchQuery={searchQuery} />
       <Features />
       <Footer />
-
-      {selectedProductId && (
-        <ProductDetails
-          productId={selectedProductId}
-          onClose={() => setSelectedProductId(null)}
-        />
-      )}
     </div>
   );
 }

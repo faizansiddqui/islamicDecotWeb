@@ -18,12 +18,9 @@ export default function AuthCallback() {
                 return;
             }
 
-            console.log("Extracted access token:", access_token);
-
             // Send token to backend for verification
             authAPI.verifyEmail(access_token)
                 .then(() => {
-                    console.log("Backend authenticated successfully");
                     navigate("/"); // redirect after login
                 })
                 .catch((err) => {

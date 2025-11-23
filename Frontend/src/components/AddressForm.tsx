@@ -21,10 +21,9 @@ interface AddressFormProps {
     address?: Address;
     onSubmit: (address: Address) => void;
     onCancel: () => void;
-    addressCount?: number;
 }
 
-export default function AddressForm({ address, onSubmit, onCancel, addressCount = 0 }: AddressFormProps) {
+export default function AddressForm({ address, onSubmit, onCancel }: AddressFormProps) {
     const { user } = useAuth();
     const [formData, setFormData] = useState<Address>({
         FullName: address?.FullName || '',
@@ -286,13 +285,6 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
             </div>
 
             {/* Show warning when trying to create a new address and limit is reached */}
-            {!address?.id && addressCount >= 3 && (
-                <div className="mb-6 bg-amber-50 border border-amber-100 rounded-lg p-4">
-                    <p className="text-amber-700 text-sm">
-                        You have reached the maximum limit of 3 addresses. You can edit existing addresses.
-                    </p>
-                </div>
-            )}
 
             {errors.form && (
                 <div className="mb-6 bg-red-50 border border-red-100 rounded-lg p-4">
@@ -303,7 +295,7 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
             {/* Changed from form to div to avoid nested forms */}
             <div className="space-y-6">
                 {/* Disable form fields when trying to create new address and limit is reached */}
-                <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${!address?.id && addressCount >= 3 ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Full Name *
@@ -315,7 +307,6 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                             onChange={handleChange}
                             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition-colors ${errors.FullName ? 'border-red-300' : 'border-gray-300'}`}
                             placeholder="Enter full name"
-                            disabled={!address?.id && addressCount >= 3}
                         />
                         {errors.FullName && <p className="mt-1 text-sm text-red-600">{errors.FullName}</p>}
                     </div>
@@ -331,7 +322,6 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                             onChange={handleChange}
                             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition-colors ${errors.phone1 ? 'border-red-300' : 'border-gray-300'}`}
                             placeholder="Enter 10-digit phone number"
-                            disabled={!address?.id && addressCount >= 3}
                         />
                         {errors.phone1 && <p className="mt-1 text-sm text-red-600">{errors.phone1}</p>}
                     </div>
@@ -347,7 +337,6 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                             onChange={handleChange}
                             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition-colors ${errors.phone2 ? 'border-red-300' : 'border-gray-300'}`}
                             placeholder="Enter 10-digit phone number (optional)"
-                            disabled={!address?.id && addressCount >= 3}
                         />
                         {errors.phone2 && <p className="mt-1 text-sm text-red-600">{errors.phone2}</p>}
                     </div>
@@ -363,7 +352,6 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                             rows={3}
                             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition-colors ${errors.address ? 'border-red-300' : 'border-gray-300'}`}
                             placeholder="Enter complete address"
-                            disabled={!address?.id && addressCount >= 3}
                         />
                         {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
                     </div>
@@ -380,7 +368,6 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                             onChange={handleChange}
                             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition-colors ${errors.city ? 'border-red-300' : 'border-gray-300'}`}
                             placeholder="Enter city"
-                            disabled={!address?.id && addressCount >= 3}
                         />
                         {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city}</p>}
                     </div>
@@ -394,7 +381,7 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                             value={formData.state}
                             onChange={handleChange}
                             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition-colors ${errors.state ? 'border-red-300' : 'border-gray-300'}`}
-                            disabled={!address?.id && addressCount >= 3 || availableStates.length === 0}
+                            disabled={availableStates.length === 0}
                         >
                             <option value="">Select State</option>
                             {availableStates.map((state) => (
@@ -415,7 +402,6 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                             onChange={handleChange}
                             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition-colors ${errors.pinCode ? 'border-red-300' : 'border-gray-300'}`}
                             placeholder="Enter 6-digit PIN code"
-                            disabled={!address?.id && addressCount >= 3}
                         />
                         {errors.pinCode && <p className="mt-1 text-sm text-red-600">{errors.pinCode}</p>}
                     </div>
@@ -430,7 +416,6 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                             value={formData.country}
                             onChange={handleChange}
                             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 outline-none transition-colors ${errors.country ? 'border-red-300' : 'border-gray-300'}`}
-                            disabled={!address?.id && addressCount >= 3}
                         >
                             <option value="">Select Country</option>
                             {countriesList.map((country) => (
@@ -453,7 +438,6 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                                     checked={formData.addressType === 'home'}
                                     onChange={handleChange}
                                     className="text-amber-600 focus:ring-amber-500"
-                                    disabled={!address?.id && addressCount >= 3}
                                 />
                                 <span className="ml-2 text-gray-700">Home</span>
                             </label>
@@ -465,7 +449,6 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                                     checked={formData.addressType === 'work'}
                                     onChange={handleChange}
                                     className="text-amber-600 focus:ring-amber-500"
-                                    disabled={!address?.id && addressCount >= 3}
                                 />
                                 <span className="ml-2 text-gray-700">Work</span>
                             </label>
@@ -487,11 +470,11 @@ export default function AddressForm({ address, onSubmit, onCancel, addressCount 
                     <button
                         type="button"
                         onClick={handleSubmit}
-                        className={`px-6 py-2 rounded-lg font-medium transition-colors ${(!address?.id && addressCount >= 3) || isSubmitting
+                        className={`px-6 py-2 rounded-lg font-medium transition-colors ${isSubmitting
                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                             : 'bg-amber-600 hover:bg-amber-700 text-white'
                             }`}
-                        disabled={(!address?.id && addressCount >= 3) || isSubmitting}
+                        disabled={isSubmitting}
                     >
                         {isSubmitting ? (
                             <span className="flex items-center gap-2">

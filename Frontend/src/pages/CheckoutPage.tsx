@@ -2,18 +2,51 @@ import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { ArrowLeft, CreditCard, Lock } from 'lucide-react';
-import PaymentMethodSelector from './checkout/PaymentMethodSelector';
-import PaymentDetails from './checkout/PaymentDetails';
 import OrderSuccess from './checkout/OrderSuccess';
 import { navigateTo } from '../utils/navigation';
 import AddressSelector from '../components/AddressSelector';
 import { userAPI } from '../services/api';
 
+// Define Razorpay types
+interface RazorpayOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  handler: (response: RazorpayResponse) => void;
+  modal: {
+    ondismiss: () => void;
+  };
+  prefill?: {
+    email?: string;
+    phone?: string;
+  };
+  theme: {
+    color: string;
+  };
+}
+
+interface RazorpayResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayInstance {
+  open: () => void;
+}
+
+declare global {
+  interface Window {
+    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
+  }
+}
+
 interface CheckoutPageProps {
   onBack?: () => void;
 }
-
-type PaymentMethod = 'credit' | 'debit' | 'paypal' | 'cod' | 'bank';
 
 export default function CheckoutPage({ onBack }: CheckoutPageProps) {
   const { cartItems, getTotalPrice, clearCart } = useCart();
@@ -21,7 +54,6 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('credit');
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
 
   // Redirect to login if not authenticated
@@ -31,80 +63,20 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
     }
   }, [isAuthenticated, authLoading]);
 
+  // Load Razorpay script if not already loaded
+  useEffect(() => {
+    if (window.Razorpay) return;
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
   const subtotal = getTotalPrice();
-
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: '',
-    cardNumber: '',
-    cardName: '',
-    expiryDate: '',
-    cvv: '',
-    paypalEmail: '',
-    bankAccount: '',
-    bankName: '',
-  });
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    // Payment validation based on method
-    if (paymentMethod === 'credit' || paymentMethod === 'debit') {
-      if (!formData.cardNumber.trim()) {
-        newErrors.cardNumber = 'Card number is required';
-      } else if (!/^\d{13,19}$/.test(formData.cardNumber.replace(/\D/g, ''))) {
-        newErrors.cardNumber = 'Invalid card number';
-      }
-      if (!formData.cardName.trim()) newErrors.cardName = 'Cardholder name is required';
-      if (!formData.expiryDate.trim()) {
-        newErrors.expiryDate = 'Expiry date is required';
-      } else if (!/^\d{2}\/\d{2}$/.test(formData.expiryDate)) {
-        newErrors.expiryDate = 'Invalid format (MM/YY)';
-      }
-      if (!formData.cvv.trim()) {
-        newErrors.cvv = 'CVV is required';
-      } else if (!/^\d{3,4}$/.test(formData.cvv)) {
-        newErrors.cvv = 'Invalid CVV';
-      }
-    } else if (paymentMethod === 'paypal') {
-      if (!formData.paypalEmail.trim()) {
-        newErrors.paypalEmail = 'PayPal email is required';
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.paypalEmail)) {
-        newErrors.paypalEmail = 'Invalid email format';
-      }
-    } else if (paymentMethod === 'bank') {
-      if (!formData.bankAccount.trim()) {
-        newErrors.bankAccount = 'Bank account number is required';
-      }
-      if (!formData.bankName.trim()) {
-        newErrors.bankName = 'Bank name is required';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
 
     // Check if an address is selected
     if (!selectedAddressId) {
@@ -132,7 +104,6 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
     setIsProcessing(true);
 
     try {
-
       // For now, we'll create one order per item in the cart
       // In a real application, you might want to create a single order with multiple items
       const orderPromises = cartItems.map(item => {
@@ -146,15 +117,68 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
       // Wait for all orders to be created
       const results = await Promise.all(orderPromises);
 
-      // Get the first order ID for redirect (in a real app, you might want to handle multiple orders differently)
-      if (results.length > 0 && results[0].data && results[0].data.order && results[0].data.order.order_id) {
-        setOrderId(results[0].data.order.order_id);
-      }
+      // Get the first order details for Razorpay checkout
+      if (results.length > 0 && results[0].data) {
+        const orderData = results[0].data;
 
-      // Clear the cart after successful order creation
-      clearCart();
-      setIsProcessing(false);
-      setOrderPlaced(true);
+        // Open Razorpay checkout
+        if (window.Razorpay && orderData.razorpay_order) {
+          // Get user data for prefilling
+          const user = localStorage.getItem('user');
+          let userEmail = '';
+          if (user) {
+            try {
+              const userData = JSON.parse(user);
+              userEmail = userData.email || '';
+            } catch (e) {
+              console.error('Failed to parse user data:', e);
+            }
+          }
+
+          const options: RazorpayOptions = {
+            key: orderData.key, // Razorpay key from backend
+            amount: orderData.razorpay_order.amount,
+            currency: orderData.razorpay_order.currency,
+            name: 'Islamic Decot',
+            description: 'Order Payment',
+            order_id: orderData.razorpay_order.id,
+            handler: function (response: RazorpayResponse) {
+
+              // Set the order ID immediately when payment is successful
+              setOrderId(orderData.local_order_id);
+
+              // Verify payment with backend
+              verifyPayment(response, orderData.local_order_id);
+
+              clearCart();
+              setIsProcessing(false);
+              setOrderPlaced(true);
+            },
+            modal: {
+              ondismiss: function () {
+                // Handle payment cancellation
+                setIsProcessing(false);
+              }
+            },
+            prefill: {
+              email: userEmail,
+            },
+            theme: {
+              color: '#B4540E' // Amber color to match your theme
+            }
+          };
+
+          const rzp = new window.Razorpay(options);
+          rzp.open();
+        } else {
+          setOrderId(orderData.local_order_id || orderData.order_id);
+          clearCart();
+          setIsProcessing(false);
+          setOrderPlaced(true);
+        }
+      } else {
+        throw new Error('Failed to create order');
+      }
     } catch (error) {
       console.error('Error creating order:', error);
       setIsProcessing(false);
@@ -162,11 +186,40 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
     }
   };
 
+  const verifyPayment = async (response: RazorpayResponse, localOrderId: string) => {
+    try {
+      // Send payment details to backend for verification
+      const result = await userAPI.verifyPayment({
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_signature: response.razorpay_signature,
+        order_id: localOrderId
+      });
+
+      if (result.data && result.data.success) {
+        // Set the order ID after successful verification
+        setOrderId(localOrderId);
+      } else {
+        console.warn('Payment verification response:', result.data);
+        // Even if verification response isn't success, still set the order ID
+        setOrderId(localOrderId);
+      }
+    } catch (error) {
+      console.error('Error verifying payment:', error);
+      // Even if verification fails, we still consider the order placed
+      // In a production app, you might want to handle this differently
+      // For example, you might want to show a warning to the user
+      alert('Payment processed but verification failed. Please contact support with your order ID: ' + localOrderId);
+      // Still set the order ID so the user can see it
+      setOrderId(localOrderId);
+    }
+  };
+
   const handleBack = () => {
     if (onBack) {
       onBack();
     } else {
-      window.location.hash = '/cart';
+      window.location.hash = '/orders';
     }
   };
 
@@ -298,24 +351,18 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
                 />
               </div>
 
-              {/* Payment Information */}
+              {/* Payment Information - Simplified for default payment method */}
               <div className="bg-white rounded-xl shadow-md p-6">
                 <div className="flex items-center gap-2 mb-6">
                   <CreditCard className="text-amber-700" size={24} />
                   <h2 className="text-2xl font-bold text-gray-900">Payment Method</h2>
                 </div>
 
-                <PaymentMethodSelector
-                  paymentMethod={paymentMethod}
-                  onPaymentMethodChange={setPaymentMethod}
-                />
-
-                <PaymentDetails
-                  paymentMethod={paymentMethod}
-                  formData={formData}
-                  errors={errors}
-                  onInputChange={handleInputChange}
-                />
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-amber-800 font-medium">
+                    Payment will be processed through our secure payment gateway. You'll be redirected to complete your payment.
+                  </p>
+                </div>
               </div>
 
               <button

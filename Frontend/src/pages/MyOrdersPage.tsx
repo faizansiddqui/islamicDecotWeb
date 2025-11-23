@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Package, ArrowLeft, Calendar } from 'lucide-react';
 import { userAPI } from '../services/api';
 import { navigateTo } from '../utils/navigation';
+import CancelOrderButton from '../components/Order/CancelOrderButton';
 
 interface Product {
   product_id: number;
@@ -125,6 +126,18 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
     return 0;
   };
 
+  const handleCancelOrder = async (orderId: string) => {
+    try {
+      // TODO: Implement when backend endpoint is ready
+      // await api.post(`/user/orders/${orderId}/cancel`);
+      // For now, just remove from local state
+      setOrders(prev => prev.filter(order => order.order_id !== orderId));
+    } catch (error) {
+      console.error('Failed to cancel order:', error);
+      throw error;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -177,8 +190,7 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
             {orders.map((order) => (
               <div
                 key={order.order_id}
-                className="bg-white rounded-xl shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => handleOrderClick(order.order_id)}
+                className="bg-white rounded-xl shadow-md p-6"
               >
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
                   {order.Product && (
@@ -217,9 +229,17 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">
+                        <CancelOrderButton
+                          orderId={order.order_id}
+                          onCancel={handleCancelOrder}
+                          disabled={order.status === 'delivered' || order.status === 'cancelled'}
+                        />
+                        <button
+                          onClick={() => handleOrderClick(order.order_id)}
+                          className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-sm font-semibold hover:bg-amber-100 transition-colors"
+                        >
                           View Details
-                        </span>
+                        </button>
                       </div>
                     </div>
                   </div>

@@ -2,12 +2,9 @@ import { useState, useEffect } from 'react';
 import { Star, Sparkles } from 'lucide-react';
 import { productAPI } from '../services/api';
 import { Product, getImageUrl, isProductBestSeller } from '../utils/productUtils';
+import { navigateTo } from '../utils/navigation';
 
-interface BestSellersProps {
-  onProductClick: (productId: number) => void;
-}
-
-export default function BestSellers({ onProductClick }: BestSellersProps) {
+export default function BestSellers() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,6 +32,10 @@ export default function BestSellers({ onProductClick }: BestSellersProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleProductClick = (productId: number) => {
+    navigateTo(`/product/${productId}`);
   };
 
   // Load categories from centralized data file (not used for display)
@@ -86,7 +87,7 @@ export default function BestSellers({ onProductClick }: BestSellersProps) {
                 return (
                   <div
                     key={product.product_id}
-                    onClick={() => onProductClick(product.product_id)}
+                    onClick={() => handleProductClick(product.product_id)}
                     className="group cursor-pointer bg-white rounded-lg overflow-hidden sm:hover:shadow-xl sm:transition-all sm:duration-300 sm:transform sm:hover:-translate-y-1"
                   >
                     <div className="relative aspect-square overflow-hidden bg-gray-100">
@@ -150,7 +151,7 @@ export default function BestSellers({ onProductClick }: BestSellersProps) {
 
             <div className="text-center mt-6 xs:mt-8 sm:mt-10 lg:mt-12">
               <button
-                onClick={() => window.location.hash = '#/categories'}
+                onClick={() => navigateTo('/categories')}
                 className="w-full xs:w-auto bg-amber-700 hover:bg-amber-800 text-white px-4 xs:px-6 sm:px-8 lg:px-12 py-2 xs:py-3 sm:py-3.5 lg:py-4 text-xs xs:text-sm sm:text-base lg:text-lg font-semibold transition-all sm:transform sm:hover:scale-105 uppercase tracking-wide rounded-lg shadow-lg"
               >
                 View All Products

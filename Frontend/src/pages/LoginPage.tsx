@@ -46,7 +46,6 @@ export default function LoginPage({ onBack }: LoginPageProps) {
         setIsLoading(true);
         setStep('waiting');
         try {
-          console.log('🔑 Access token found in URL, verifying...');
           await verifyEmail(accessToken);
           setSuccess('Login successful! Redirecting...');
           // Clear the URL hash/query

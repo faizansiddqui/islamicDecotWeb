@@ -76,9 +76,7 @@ export default function CategoryPage({ onBack }: CategoryPageProps) {
     const loadAllProducts = async () => {
         setIsLoadingProducts(true);
         try {
-            console.log('🔵 Loading all products...');
             const response = await productAPI.getProducts();
-            console.log('🟢 All products loaded:', response.data);
 
             if (response.data.status === true && response.data.products && Array.isArray(response.data.products)) {
                 setProducts(response.data.products);
@@ -96,9 +94,7 @@ export default function CategoryPage({ onBack }: CategoryPageProps) {
     const loadProductsByCategory = async (categoryName: string) => {
         setIsLoadingProducts(true);
         try {
-            console.log(`🔵 Loading products for category: ${categoryName}`);
             const response = await productAPI.getProductByCategory(categoryName);
-            console.log('🟢 Products loaded:', response.data);
 
             if (response.data.status === 'ok' && response.data.data) {
                 const categoryData = response.data.data;
@@ -265,7 +261,6 @@ export default function CategoryPage({ onBack }: CategoryPageProps) {
                                             image={imageUrl}
                                             category={product.Catagory?.name || selectedCategory || 'Product'}
                                             inStock={product.quantity > 0}
-                                            onClick={() => handleProductClick(product.product_id)}
                                         />
                                     );
                                 })}

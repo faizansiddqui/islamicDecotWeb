@@ -43,9 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     localStorage.removeItem('user');
                     localStorage.removeItem('isAuthenticated');
                 }
-            } else {
-                // console.log('⚠️ AuthContext: No user data found in localStorage');
-            }
+            } 
         } catch (error) {
             console.error('❌ AuthContext: Auth check failed:', error);
         } finally {
@@ -127,7 +125,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userId = payload.sub || '';
 
             const response = await authAPI.verifyEmail(token);
-            console.log('Email verification response:', response.data);
 
             // Backend sets httpOnly cookies (accessToken, refreshToken)
             // and returns success message
@@ -168,7 +165,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const verifyCode = async (email: string, code: string) => {
         try {
             const response = await authAPI.verifyCode(email, code);
-            console.log('Verify response:', response.data);
 
             // Backend returns user data after successful verification
             if (response.data && response.data.status) {
@@ -227,6 +223,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('user');
         localStorage.removeItem('authToken');
         localStorage.removeItem('isAuthenticated');
+        // Clear wishlist only when user signs out
+        localStorage.removeItem('wishlist');
 
         // Try to call logout endpoint if it exists
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';

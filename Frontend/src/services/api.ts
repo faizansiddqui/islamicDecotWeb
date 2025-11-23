@@ -217,6 +217,17 @@ export const userAPI = {
             withCredentials: true
         });
     },
+
+    verifyPayment: (paymentData: { 
+        razorpay_order_id: string; 
+        razorpay_payment_id: string; 
+        razorpay_signature: string;
+        order_id: string;
+    }) => {
+        return api.post('/user/verify-payment', paymentData, {
+            withCredentials: true
+        });
+    },
 };
 
 // Product API

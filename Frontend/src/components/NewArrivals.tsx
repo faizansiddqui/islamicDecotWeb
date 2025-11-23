@@ -2,12 +2,9 @@ import { useState, useEffect } from 'react';
 import { Star, Sparkles, Clock } from 'lucide-react';
 import { productAPI } from '../services/api';
 import { Product, getImageUrl } from '../utils/productUtils';
+import { navigateTo } from '../utils/navigation';
 
-interface NewArrivalsProps {
-    onProductClick: (productId: number) => void;
-}
-
-export default function NewArrivals({ onProductClick }: NewArrivalsProps) {
+export default function NewArrivals() {
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -39,6 +36,10 @@ export default function NewArrivals({ onProductClick }: NewArrivalsProps) {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleProductClick = (productId: number) => {
+        navigateTo(`/product/${productId}`);
     };
 
     const calculateDiscount = (price: number, oldPrice: number) => {
@@ -86,7 +87,7 @@ export default function NewArrivals({ onProductClick }: NewArrivalsProps) {
                         return (
                             <div
                                 key={product.product_id}
-                                onClick={() => onProductClick(product.product_id)}
+                                onClick={() => handleProductClick(product.product_id)}
                                 className="group cursor-pointer bg-white rounded-lg overflow-hidden sm:hover:shadow-xl sm:transition-all sm:duration-300 sm:transform sm:hover:-translate-y-1 border border-gray-200"
                             >
                                 <div className="relative aspect-square overflow-hidden bg-gray-100">
@@ -141,7 +142,7 @@ export default function NewArrivals({ onProductClick }: NewArrivalsProps) {
 
                 <div className="text-center mt-10">
                     <button
-                        onClick={() => window.location.pathname = '/categories'}
+                        onClick={() => navigateTo('/categories')}
                         className="bg-amber-700 hover:bg-amber-800 text-white px-8 py-3 text-sm sm:text-base font-semibold transition-all sm:transform sm:hover:scale-105 uppercase tracking-wide rounded-lg shadow-lg"
                     >
                         Explore All New Items

@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { ProfileProvider } from './context/ProfileContext';
 import { AdminAuthProvider } from './context/AdminAuthContext';
+import { WishlistProvider } from './context/WishlistContext';
 
 
 createRoot(document.getElementById('root')!).render(
@@ -15,7 +16,9 @@ createRoot(document.getElementById('root')!).render(
         <AdminAuthProvider>
           <ProfileProvider>
             <CartProvider>
-              <App />
+              <WishlistProvider>
+                <App />
+              </WishlistProvider>
             </CartProvider>
           </ProfileProvider>
         </AdminAuthProvider>

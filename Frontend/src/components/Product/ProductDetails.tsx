@@ -5,7 +5,9 @@ import { productAPI } from '../../services/api';
 import ProductImageGallery from './ProductImageGallery';
 import ProductInfo from './ProductInfo';
 import ProductActions from './ProductActions';
+import WishlistButton from './WishlistButton';
 import { navigateTo } from '../../utils/navigation';
+import { Product } from '../../utils/productUtils';
 
 interface ProductSpecification {
   specification_id?: number;
@@ -77,10 +79,10 @@ export default function ProductDetails({ productId, onClose }: ProductDetailsPro
       addToCart(product.product_id, quantity, {
         name: product.name || product.title || 'Product',
         price: product.selling_price || product.price,
-        image: Array.isArray(product.product_image) 
-          ? product.product_image[0] 
-          : typeof product.product_image === 'string' 
-            ? product.product_image 
+        image: Array.isArray(product.product_image)
+          ? product.product_image[0]
+          : typeof product.product_image === 'string'
+            ? product.product_image
             : Object.values(product.product_image)[0] || ''
       });
       setAddedToCart(true);
@@ -173,6 +175,15 @@ export default function ProductDetails({ productId, onClose }: ProductDetailsPro
                 specifications={product.ProductSpecification || product.ProductSpecifications || []}
                 quantity={product.quantity}
               />
+
+              {/* Wishlist Button */}
+              <div className="flex justify-end">
+                <WishlistButton
+                  product={product as Product}
+                  size="lg"
+                  showLabel={true}
+                />
+              </div>
 
               <ProductActions
                 quantity={product.quantity}
