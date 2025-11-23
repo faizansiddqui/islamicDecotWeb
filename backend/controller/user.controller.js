@@ -118,6 +118,10 @@ export const order = async (req, res) => {
       return res.status(400).json({ message: "Out of stock" });
     }
 
+  const email =  await User.findOne({
+      where:{id:decode_user},
+      attributes:['email']
+    })
 
     const amountUSD = (product.selling_price * qty ).toFixed(2);
 
@@ -125,7 +129,9 @@ export const order = async (req, res) => {
 
     // ✅ HASH for USD payments
    const firstname = userAddress.FullName;
-const email = "test@email.com";
+// const email = "test@email.com";
+console.log(email);
+
 
 const hashString =
   `${process.env.PAYU_KEY}|${txnid}|${amountUSD}|USD_Payment|` +
@@ -162,7 +168,7 @@ const hashString =
         currency: "USD",
         productinfo: "USD_Payment",
         firstname: userAddress.FullName,
-        email: "test@email.com",
+        email: email,
         phone: userAddress.phone1,
         surl: process.env.PAYU_SUCCESS_URL,
         furl: process.env.PAYU_FAILURE_URL,
