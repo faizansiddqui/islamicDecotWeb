@@ -225,8 +225,8 @@ export const verifyPayment = async (req, res) => {
       );
     }
 
-    // return res.redirect(process.env.FRONTEND_URL + "/payment-status");
-    return res.status(200).json({Message:"Order create Successfully"});
+    return res.redirect(`${process.env.FRONTEND_URL}`);
+    // return res.status(200).json({Message:"Order create Successfully"});
 
   } catch (err) {
     console.error("PayU Dollar verify error:", err);

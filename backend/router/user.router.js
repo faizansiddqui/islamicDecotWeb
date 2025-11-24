@@ -40,7 +40,7 @@ router.post('/search', searchProduct)
 //order related route
 router.post('/create-order', authMiddleware, order);
 router.post('/get-orders', authMiddleware, getOrders);
-router.post('/verify-payment',authMiddleware, verifyPayment);
+router.post('/verify-payment', verifyPayment);
 router.post('/cancel-order',authMiddleware, cancelOrder);
 
 //cart related routes
