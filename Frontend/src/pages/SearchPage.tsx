@@ -11,9 +11,10 @@ import { navigateTo } from '../utils/navigation';
 
 interface SearchPageProps {
     onBack: () => void;
+    onSearchChange: (query: string) => void;
 }
 
-export default function SearchPage({ onBack }: SearchPageProps) {
+export default function SearchPage({ onBack, onSearchChange }: SearchPageProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [products, setProducts] = useState<Product[]>([]);
     const [suggestions, setSuggestions] = useState<Product[]>([]);
@@ -132,7 +133,7 @@ export default function SearchPage({ onBack }: SearchPageProps) {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <Navbar />
+            <Navbar onSearchChange={onSearchChange} />
 
             <div className="bg-white shadow-sm sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

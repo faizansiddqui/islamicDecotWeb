@@ -18,7 +18,6 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
-  const [orderId, setOrderId] = useState<string | null>(null);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   // Add state for PayU payment
   const [payuPaymentData, setPayuPaymentData] = useState<{ payuUrl: string; params: PayUParams } | null>(null);
@@ -81,9 +80,6 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
           });
         } else {
           // Handle non-PayU flow (existing logic)
-          if (response.data && response.data.order && response.data.order.order_id) {
-            setOrderId(response.data.order.order_id);
-          }
           clearCart();
           setIsProcessing(false);
           setOrderPlaced(true);
@@ -117,7 +113,7 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
   }
 
   if (orderPlaced) {
-    return <OrderSuccess onContinueShopping={handleContinueShopping} orderId={orderId || undefined} />;
+    return <OrderSuccess onContinueShopping={handleContinueShopping} />;
   }
 
   // Show loading while checking authentication

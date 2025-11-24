@@ -22,9 +22,6 @@ interface PayUPaymentProps {
 
 export default function PayUPayment({ payuUrl, params }: PayUPaymentProps) {
     useEffect(() => {
-        console.log('=== PayUPayment component mounted ===');
-        console.log('PayU URL:', payuUrl);
-        console.log('PayU Params:', params);
 
         // Validate required parameters
         if (!payuUrl) {
@@ -42,13 +39,11 @@ export default function PayUPayment({ payuUrl, params }: PayUPaymentProps) {
         // Process hash parameter if it's an object
         let processedParams = { ...params };
         if (typeof params.hash === 'object' && params.hash !== null) {
-            console.log('Hash is an object, extracting v1 value');
             // Extract the v1 hash value
             processedParams = {
                 ...params,
                 hash: params.hash.v1 || params.hash.v2 || JSON.stringify(params.hash)
             };
-            console.log('Processed hash value:', processedParams.hash);
         }
 
         // Check for required PayU parameters
@@ -68,15 +63,12 @@ export default function PayUPayment({ payuUrl, params }: PayUPaymentProps) {
         }
 
         // Create a form element
-        console.log('Creating form element');
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = payuUrl;
         form.style.display = 'none';
-        console.log('Form created with action:', payuUrl);
 
         // Add all parameters as hidden inputs
-        console.log('Adding parameters to form');
         Object.entries(processedParams).forEach(([key, value]) => {
             const input = document.createElement('input');
             input.type = 'hidden';
@@ -84,25 +76,20 @@ export default function PayUPayment({ payuUrl, params }: PayUPaymentProps) {
             // Convert value to string if it's an object
             input.value = typeof value === 'object' ? JSON.stringify(value) : String(value);
             form.appendChild(input);
-            console.log('Added input:', key, '=', value);
         });
 
         // Append form to body and submit
-        console.log('Appending form to document body');
         document.body.appendChild(form);
-        console.log('Submitting form');
         form.submit();
 
         // Cleanup
         return () => {
-            console.log('Cleaning up PayUPayment component');
             if (document.body.contains(form)) {
                 document.body.removeChild(form);
             }
         };
     }, [payuUrl, params]);
 
-    console.log('Rendering PayUPayment loading UI');
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
             <div className="text-center">

@@ -240,10 +240,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
 
     const updateQuantity = (productId: number, quantity: number) => {
-        if (quantity <= 0) {
-            removeFromCart(productId);
-            return;
+        // Ensure quantity is at least 1
+        if (quantity < 1) {
+            quantity = 1;
         }
+        
         setCartItems((prevItems) =>
             prevItems.map((item) =>
                 item.id === productId ? { ...item, quantity } : item

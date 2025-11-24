@@ -161,7 +161,11 @@ export default function App() {
   }
 
   if (currentPage === 'categories') {
-    return <CategoryPage onBack={() => navigateTo('/')} />;
+    return <CategoryPage onBack={() => navigateTo('/')} onSearchChange={setSearchQuery} />;
+  }
+
+  if (currentPage === 'search') {
+    return <SearchPage onBack={() => navigateTo('/')} onSearchChange={setSearchQuery} />;
   }
 
   if (currentPage === 'contact') {
@@ -186,10 +190,6 @@ export default function App() {
 
   if (currentPage === 'terms') {
     return <TermsOfServicePage onBack={() => navigateTo('/')} />;
-  }
-
-  if (currentPage === 'search') {
-    return <SearchPage onBack={() => navigateTo('/')} />;
   }
 
   if (currentPage === 'wishlist') {

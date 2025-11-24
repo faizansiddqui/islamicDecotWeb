@@ -5,25 +5,23 @@ import { navigateTo } from '../../utils/navigation';
 
 interface OrderSuccessProps {
     onContinueShopping: () => void;
-    orderId?: string;
 }
 
-export default function OrderSuccess({ onContinueShopping, orderId }: OrderSuccessProps) {
+export default function OrderSuccess({ onContinueShopping }: OrderSuccessProps) {
     const { clearCart } = useCart();
 
     // Clear the cart when the component mounts
     useEffect(() => {
         clearCart();
-    }, [clearCart]);
+    }, []);
 
-    // Get order ID from URL query parameters if not provided as prop
+    // Get order ID from URL query parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const orderIdFromUrl = urlParams.get('orderId');
-    const finalOrderId = orderId || orderIdFromUrl;
+    const orderId = urlParams.get('orderId');
 
     const handleViewOrder = () => {
-        if (finalOrderId) {
-            navigateTo(`/order/${finalOrderId}`);
+        if (orderId) {
+            navigateTo(`/order/${orderId}`);
         } else {
             onContinueShopping();
         }

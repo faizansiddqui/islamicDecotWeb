@@ -169,11 +169,10 @@ export default function CartPage({ onBack }: CartPageProps) {
                                                     onClick={() => {
                                                         if (item.quantity > 1) {
                                                             updateQuantity(item.id, item.quantity - 1);
-                                                        } else {
-                                                            removeFromCart(item.id);
                                                         }
                                                     }}
-                                                    className="px-4 py-2 hover:bg-gray-100 transition-colors"
+                                                    disabled={item.quantity <= 1}
+                                                    className="px-4 py-2 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     <Minus size={16} />
                                                 </button>
@@ -183,7 +182,7 @@ export default function CartPage({ onBack }: CartPageProps) {
                                                 <button
                                                     onClick={() => {
                                                         const availableStock = productStocks[item.id] ?? item.stock ?? 0;
-                                                        if (item.quantity < availableStock && availableStock >= 1) {
+                                                        if (availableStock >= 1 && item.quantity < availableStock) {
                                                             updateQuantity(item.id, item.quantity + 1);
                                                         }
                                                     }}
