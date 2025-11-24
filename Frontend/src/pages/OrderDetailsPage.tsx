@@ -55,10 +55,27 @@ export default function OrderDetailsPage({ orderId, onBack }: OrderDetailsPagePr
     const [isCancelling, setIsCancelling] = useState(false);
     const [cancelError, setCancelError] = useState<string | null>(null);
     const [showCancelDialog, setShowCancelDialog] = useState(false);
+    const [isCancelDropdownOpen, setIsCancelDropdownOpen] = useState(false); // Add this state for dropdown
 
     useEffect(() => {
         fetchOrderDetails();
-    }, [orderId]);
+
+        // Close cancel dropdown when clicking outside
+        const handleClickOutside = (event: MouseEvent) => {
+            const dropdown = document.getElementById('cancel-dropdown');
+            if (dropdown && !dropdown.contains(event.target as Node)) {
+                setIsCancelDropdownOpen(false);
+            }
+        };
+
+        if (isCancelDropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [orderId, isCancelDropdownOpen]);
 
     const fetchOrderDetails = async () => {
         try {
@@ -554,112 +571,132 @@ export default function OrderDetailsPage({ orderId, onBack }: OrderDetailsPagePr
                                 </div>
                             ) : null}
 
-                            {/* Cancel Order Section - Only show if order can be cancelled */}
+                            {/* Order Information Section - Moved to bottom of order summary */}
+                            <div className="mt-6 pt-6 border-t border-gray-200">
+                                <h2 className="text-xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-100">Order Information</h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <p className="text-sm text-gray-500 mb-1">Order ID</p>
+                                        <p className="font-medium">#{order.order_id}</p>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-sm text-gray-500 mb-1">Order Date & Time</p>
+                                        <p className="font-medium">
+                                            {new Date(order.createdAt).toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-sm text-gray-500 mb-1">Payment Method</p>
+                                        <p className="font-medium">Paid via PayU</p>
+                                        {order.payu_transaction_id && (
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Transaction ID: {order.payu_transaction_id}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+                            {/* Progress Tracker - Mobile Only (Vertical at bottom) */}
+                            <div className="md:hidden bg-white rounded-xl shadow-md p-6">
+                                <h3 className="text-lg font-bold text-gray-900 mb-4">Order Progress</h3>
+                                <div className="flex flex-col items-start relative">
+                                    {/* Vertical line */}
+                                    <div className="absolute left-5 top-5 bottom-5 w-0.5 bg-gray-200 -z-0">
+                                        {/* Progress line */}
+                                        <div
+                                            className="w-full bg-emerald-500 transition-all duration-500 ease-in-out"
+                                            style={{
+                                                height: `${statusIndex === 0 ? 0 : Math.min((statusIndex / (statusSteps.length - 1)) * 100, 100)}%`
+                                            }}
+                                        />
+                                    </div>
+
+                                    {statusSteps.map((step, index) => {
+                                        const isCompleted = index <= statusIndex;
+                                        const isActive = index === statusIndex;
+                                        const Icon = step.icon;
+
+                                        return (
+                                            <div key={index} className="flex items-center mb-6 last:mb-0 w-full relative z-10">
+                                                <div
+                                                    className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 ${isCompleted ? step.color : 'bg-gray-300'} ${isActive ? 'ring-4 ring-offset-2 ring-emerald-100' : ''}`}
+                                                >
+                                                    <Icon className="text-white" size={16} />
+                                                </div>
+                                                <div className="flex-1 flex items-center">
+                                                    {isActive && (
+                                                        <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2"></div>
+                                                    )}
+                                                    <span className={`text-sm font-medium ${isCompleted ? 'text-gray-900' : 'text-gray-500'} ${isActive ? 'font-bold' : ''}`}>
+                                                        {step.name}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                                                        {/* Cancel Order Section - Moved to bottom with dropdown functionality */}
                             {shouldShowCancelButton(order) && (
                                 <div className="mt-6 pt-6 border-t border-gray-200">
-                                    {cancelError && (
-                                        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
-                                            {cancelError}
-                                        </div>
-                                    )}
-                                    <div className="bg-gray-50 rounded-lg p-4">
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Cancel and Return Refund</h3>
-                                        <p className="text-gray-600 text-sm mb-4">
-                                            For refund contact the support on WhatsApp
-                                        </p>
+                                    <div className="bg-gray-50 rounded-lg p-4" id="cancel-dropdown">
                                         <button
-                                            onClick={handleCancelConfirmation}
-                                            disabled={isCancelling}
-                                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${isCancelling
-                                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                                                }`}
+                                            onClick={() => setIsCancelDropdownOpen(!isCancelDropdownOpen)}
+                                            className="w-full flex justify-between items-center py-2 text-left"
                                         >
-                                            {isCancelling ? 'Cancelling...' : 'Cancel Order'}
+                                            <h3 className="text-lg font-semibold text-gray-900">Cancel and Return Refund Policy</h3>
+                                            <svg
+                                                className={`w-5 h-5 text-gray-500 transition-transform ${isCancelDropdownOpen ? 'rotate-180' : ''}`}
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
                                         </button>
+
+                                        {isCancelDropdownOpen && (
+                                            <div className="mt-4 pt-4 border-t border-gray-200">
+                                                <p className="text-gray-600 text-sm mb-4">
+                                                    For refund contact the support on WhatsApp on <a href="/contact" className="text-blue-500">Contact Page</a> and read the <a href="/returns" className="text-blue-500">Return & Refund Policy</a>
+                                                </p>
+                                                {cancelError && (
+                                                    <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                                                        {cancelError}
+                                                    </div>
+                                                )}
+                                                <button
+                                                    onClick={handleCancelConfirmation}
+                                                    disabled={isCancelling}
+                                                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${isCancelling
+                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                                        }`}
+                                                >
+                                                    {isCancelling ? 'Cancelling...' : 'Cancel Order'}
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
                         </div>
-
-                        {/* Order Information Section - Added at the bottom of order summary */}
-                        <div className="bg-white rounded-xl shadow-md p-6">
-                            <h2 className="text-xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-100">Order Information</h2>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <p className="text-sm text-gray-500 mb-1">Order ID</p>
-                                    <p className="font-medium">#{order.order_id}</p>
-                                </div>
-
-                                <div>
-                                    <p className="text-sm text-gray-500 mb-1">Order Date & Time</p>
-                                    <p className="font-medium">
-                                        {new Date(order.createdAt).toLocaleDateString('en-US', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        })}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p className="text-sm text-gray-500 mb-1">Payment Method</p>
-                                    <p className="font-medium">Paid via PayU</p>
-                                    {order.payu_transaction_id && (
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            Transaction ID: {order.payu_transaction_id}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Progress Tracker - Mobile Only (Vertical at bottom) */}
-                        <div className="md:hidden bg-white rounded-xl shadow-md p-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4">Order Progress</h3>
-                            <div className="flex flex-col items-start relative">
-                                {/* Vertical line */}
-                                <div className="absolute left-5 top-5 bottom-5 w-0.5 bg-gray-200 -z-0">
-                                    {/* Progress line */}
-                                    <div
-                                        className="w-full bg-emerald-500 transition-all duration-500 ease-in-out"
-                                        style={{
-                                            height: `${statusIndex === 0 ? 0 : Math.min((statusIndex / (statusSteps.length - 1)) * 100, 100)}%`
-                                        }}
-                                    />
-                                </div>
-
-                                {statusSteps.map((step, index) => {
-                                    const isCompleted = index <= statusIndex;
-                                    const isActive = index === statusIndex;
-                                    const Icon = step.icon;
-
-                                    return (
-                                        <div key={index} className="flex items-center mb-6 last:mb-0 w-full relative z-10">
-                                            <div
-                                                className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 ${isCompleted ? step.color : 'bg-gray-300'} ${isActive ? 'ring-4 ring-offset-2 ring-emerald-100' : ''}`}
-                                            >
-                                                <Icon className="text-white" size={16} />
-                                            </div>
-                                            <div className="flex-1 flex items-center">
-                                                {isActive && (
-                                                    <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2"></div>
-                                                )}
-                                                <span className={`text-sm font-medium ${isCompleted ? 'text-gray-900' : 'text-gray-500'} ${isActive ? 'font-bold' : ''}`}>
-                                                    {step.name}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
                     </div>
 
-                    {/* Order Information */}
+                    {/* Order Information - Customer Details and Delivery Address */}
                     <div className="space-y-6">
                         <div className="bg-white rounded-xl shadow-md p-6">
                             <h2 className="text-xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-100">Customer Details</h2>

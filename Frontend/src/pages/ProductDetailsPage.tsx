@@ -196,6 +196,15 @@ export default function ProductDetailsPage({ productId, onBack }: ProductDetails
                                 onAddToCart={handleAddToCart}
                                 addedToCart={addedToCart}
                                 onGoToCart={handleGoToCart}
+                                productId={product.product_id}
+                                productName={product.name || product.title || 'Product'}
+                                productPrice={product.selling_price || product.price}
+                                productImage={Array.isArray(product.product_image)
+                                    ? product.product_image[0]
+                                    : typeof product.product_image === 'string'
+                                        ? product.product_image
+                                        : Object.values(product.product_image)[0] || ''
+                                }
                             />
                         </div>
                     </div>
