@@ -37,6 +37,7 @@ async function checkRefreshToken(refreshToken,req, res, next) {
   res.cookie("accessToken", AccessToken, {
     httpOnly: true,
     maxAge: 15 * 60 * 1000,
+    sameSite: "none", // ✅ VERY IMPORTANT
   });
 
     req.body.decode_user= decoded.id;
