@@ -5,14 +5,17 @@ export interface Category {
 }
 
 export const CATEGORIES: Category[] = [
-    { id: 1, name: "Kiswah Clothe" },
+    { id: 1, name: "Kiswah Clothes" },
     { id: 2, name: "Kiswah Qandeel" },
     { id: 3, name: "Kiswah Belts" },
     { id: 4, name: "Kiswah Locks" },
     { id: 5, name: "Kiswah Keys" },
     { id: 6, name: "Kiswah Keys Bags" },
     { id: 7, name: "Islamic Decoration Arts" },
-    { id: 8, name: "Hijab" },
+    { id: 8, name: "Red Kiswah" },
+    { id: 9, name: "Green Kiswah" },
+    { id: 10, name: "Kiswah Sets" },
+    { id: 11, name: "Kiswah Framing Clothes" },
 ];
 
 // Helper function to get all categories
