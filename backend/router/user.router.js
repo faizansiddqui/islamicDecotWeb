@@ -23,7 +23,8 @@ import {
     updateCartItem,
     saveCart,
     verifyPayment,
-    cancelOrder
+    cancelOrder,
+     payuFailure 
 } from "../controller/user.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 
@@ -41,6 +42,7 @@ router.post('/search', searchProduct)
 router.post('/create-order', authMiddleware, order);
 router.post('/get-orders', authMiddleware, getOrders);
 router.post('/verify-payment', verifyPayment);
+router.post('/payu-failure', payuFailure);
 router.post('/cancel-order',authMiddleware, cancelOrder);
 
 //cart related routes

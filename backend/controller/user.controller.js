@@ -272,6 +272,47 @@ export const verifyPayment = async (req, res) => {
 };
 
 
+export const payuFailure = async (req, res) => {
+  try {
+    const {
+      txnid,
+      status,
+      hash,
+      amount,
+      firstname,
+      email,
+      productinfo
+    } = req.body;
+
+    // console.log("PayU Failure Callback Body:", req.body);
+
+    // ✅ Just log and mark order failed
+    if (!txnid) {
+      return res.status(400).json({ message: "Transaction ID missing" });
+    }
+
+    const orderId = txnid.replace("USD_", "");
+
+    // Update order status
+    await Orders.update(
+      { payment_status: "failed" },
+      { where: { order_id: orderId } }
+    );
+
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+
+    // Redirect user to frontend failure page
+    const redirectUrl = `${frontendUrl}/payment-failed?orderId=${orderId}`;
+    return res.redirect(redirectUrl);
+
+  } catch (error) {
+    console.error("PayU Failure Error:", error);
+    return res.status(500).json({ message: "PayU failure handler error" });
+  }
+};
+
+
+
 
 const createAddress = async (req, res) => {
   const {
