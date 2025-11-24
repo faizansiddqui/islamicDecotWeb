@@ -12,9 +12,10 @@ async function checkRefreshToken(refreshToken,req, res, next) {
   }
 
   const decoded = await varifyToken(refreshToken, process.env.JWT_SECRET);
-  if (decoded.status !== "ok") {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
+if (decoded && decoded.id) {
+  req.body.decode_user = decoded.id;
+  return next();
+}
   const user = await User.findOne({ where: { refreshToken } });
 
   // If no user found with this refresh token
@@ -37,6 +38,8 @@ async function checkRefreshToken(refreshToken,req, res, next) {
   res.cookie("accessToken", AccessToken, {
     httpOnly: true,
     maxAge: 15 * 60 * 1000,
+     secure: true,
+  sameSite: "none",
   });
 
     req.body.decode_user= decoded.id;
@@ -47,28 +50,36 @@ async function checkRefreshToken(refreshToken,req, res, next) {
 
 export const authMiddleware = async (req, res, next) => {
   try {
-    const accessToken = req?.cookies?.accessToken;
-    const { refreshToken } = req?.cookies;
+    const accessToken =
+      req.cookies?.accessToken ||
+      req.headers.authorization?.split(" ")[1];
 
+    const refreshToken =
+      req.cookies?.refreshToken ||
+      req.headers["refreshtoken"];
 
-    if (!accessToken) {
-
-      return checkRefreshToken(refreshToken,req, res, next);
-
+    if (!accessToken && !refreshToken) {
+      return res.status(401).json({ message: "Unauthorized user" });
     }
 
-    const decoded = await varifyToken(accessToken, process.env.JWT_SECRET);
-    if(decoded.status !== 'ok'){
-      return checkRefreshToken(refreshToken,req,res,next);
+    // 1. Try access token
+    if (accessToken) {
+      const decoded = await varifyToken(accessToken, process.env.JWT_SECRET);
+     if (decoded && decoded.id) {
+  req.body.decode_user = decoded.id;
+  return next();
+}
     }
-     
-    
 
-    
-    
-    req.body.decode_user = decoded.id;
-    next();
+    // 2. Try refresh token
+    if (refreshToken) {
+      return checkRefreshToken(refreshToken, req, res, next);
+    }
+
+    return res.status(403).json({ message: "Forbidden" });
   } catch (error) {
-    console.log(error);
+    console.error("Auth Middleware Error:", error);
+    return res.status(403).json({ message: "Forbidden" });
   }
-};  
+};
+

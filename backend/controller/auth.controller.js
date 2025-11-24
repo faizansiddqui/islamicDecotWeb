@@ -67,10 +67,14 @@ export const varifyEmail = async (req, res) => {
     res.cookie("accessToken", AccessToken, {
       httpOnly: true,
       maxAge: 15 * 60 * 1000,
+      secure: true,
+  sameSite: "none",
     });
     res.cookie("refreshToken", RefreshToken, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure: true,
+  sameSite: "none",
     });
 
     res.status(200).json({ Message: "Login successful check your cookie" });
