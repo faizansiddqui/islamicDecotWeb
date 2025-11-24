@@ -231,7 +231,7 @@ export const verifyPayment = async (req, res) => {
       );
     }
 
-    return res.redirect(`${process.env.FRONTEND_URL}`);
+    return res.redirect(`${process.env.FRONTEND_URL}/orders`);
 
   } catch (err) {
     console.error("PayU verify error:", err);
