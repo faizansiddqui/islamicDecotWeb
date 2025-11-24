@@ -191,12 +191,15 @@ export const verifyPayment = async (req, res) => {
       txnid,
       status,
       hash,
-      payuMoneyId,
-      amount
+      mihpayid,
+      amount,
+      firstname,
+      email,
+      productinfo
     } = req.body;
 
     const hashString =
-      `${process.env.PAYU_SALT}|${status}|||||||||||${amount}|USD_Payment|${txnid}|${process.env.PAYU_KEY}`;
+      `${process.env.PAYU_SALT}|${status}|||||||||||${email}|${firstname}|${productinfo}|${amount}|${txnid}|${process.env.PAYU_KEY}`;
 
     const expectedHash = crypto
       .createHash("sha512")
@@ -204,6 +207,9 @@ export const verifyPayment = async (req, res) => {
       .digest("hex");
 
     if (hash !== expectedHash) {
+      console.log("Hash Mismatch");
+      console.log("PayU Hash:", hash);
+      console.log("Our Hash:", expectedHash);
       return res.status(400).json({ message: "Hash mismatch" });
     }
 
@@ -214,7 +220,7 @@ export const verifyPayment = async (req, res) => {
       await Orders.update(
         {
           payment_status: "paid",
-          payu_payment_id: payuMoneyId
+          payu_payment_id: mihpayid
         },
         { where: { order_id: txnid } }
       );
@@ -226,13 +232,13 @@ export const verifyPayment = async (req, res) => {
     }
 
     return res.redirect(`${process.env.FRONTEND_URL}`);
-    // return res.status(200).json({Message:"Order create Successfully"});
 
   } catch (err) {
-    console.error("PayU Dollar verify error:", err);
+    console.error("PayU verify error:", err);
     res.status(500).json({ message: "Verification failed" });
   }
 };
+
 
 
 const createAddress = async (req, res) => {
