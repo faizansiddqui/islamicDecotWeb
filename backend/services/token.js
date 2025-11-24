@@ -20,22 +20,13 @@ export const generateRefressToken = (data, secret) => {
   });
 };
 
-export const varifyToken = (token,secret)=>{
-    try {
-        return new Promise((resolve,reject)=>{
-            jwt.verify(token,secret,(err,result)=>{
-                if(err) return reject(new Error("Invalid"));
-  
-                
-                result.status = "ok";
-                resolve(result);
-            })
-        })
-        
-    } catch (error) {
-
-        console.error(error);
-        
-        
-    }
-}
+export const varifyToken = (token, secret) => {
+  return new Promise((resolve) => {
+    jwt.verify(token, secret, (err, decoded) => {
+      if (err) {
+        return resolve(null); // ✅ never throw, just return null
+      }
+      resolve(decoded); // ✅ only actual payload
+    });
+  });
+};
