@@ -21,7 +21,7 @@ export default function OrderStatusButtons({ order, updatingOrderId, onStatusUpd
         }
 
         // If order is RTO, reject, or cancelled, disable all buttons
-        if (currentStatus === 'rto' || currentStatus === 'reject' || currentStatus === 'rejected' || currentStatus === 'cancelled') {
+        if (currentStatus === 'rto' || currentStatus === 'reject' || currentStatus === 'rejected' || currentStatus === 'cancelled' || currentStatus === 'payment failed') {
             return true;
         }
 
@@ -56,7 +56,16 @@ export default function OrderStatusButtons({ order, updatingOrderId, onStatusUpd
             return buttonStatusLower === 'rto';
         }
 
+        // If payment failed, don't show any buttons
+        if (currentStatus === 'payment failed') {
+            return false;
+        }
+
         if (currentStatus === 'pending') {
+            // If payment is successful (paid), automatically show as confirmed (no need for manual confirm)
+            if (order.payment_status === 'success' || order.payment_status === 'paid') {
+                return false; // Don't show confirm button if payment is already successful
+            }
             return buttonStatusLower === 'confirm' || buttonStatusLower === 'reject';
         }
 
@@ -135,4 +144,3 @@ export default function OrderStatusButtons({ order, updatingOrderId, onStatusUpd
         </div>
     );
 }
-

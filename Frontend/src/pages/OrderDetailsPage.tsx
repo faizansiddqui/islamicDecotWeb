@@ -37,6 +37,7 @@ interface Order {
     totalAmount: string;
     payment_method?: string;
     payu_transaction_id?: string;
+    payment_status?: string; // Add payment_status property
     Product?: Product;
     items?: OrderItem[]; // Add items array
 }
@@ -77,7 +78,20 @@ export default function OrderDetailsPage({ orderId, onBack }: OrderDetailsPagePr
                 // Find the specific order
                 const foundOrder = orders.find(o => o.order_id === orderId);
                 if (foundOrder) {
-                    setOrder(foundOrder);
+                    // If payment failed, set order status to 'payment failed'
+                    if (foundOrder.payment_status === 'failed') {
+                        setOrder({ ...foundOrder, status: 'payment failed' });
+                    }
+                    // If payment is successful (paid/success) and order is pending, automatically confirm the order
+                    else if ((foundOrder.payment_status === 'success' || foundOrder.payment_status === 'paid') && foundOrder.status?.toLowerCase() === 'pending') {
+                        setOrder({ ...foundOrder, status: 'confirmed' });
+                    }
+                    // If order is pending (and payment is not successful), automatically set status to 'payment failed'
+                    else if (foundOrder.status?.toLowerCase() === 'pending') {
+                        setOrder({ ...foundOrder, status: 'payment failed' });
+                    } else {
+                        setOrder(foundOrder);
+                    }
                 } else {
                     setError('Order not found');
                 }
@@ -86,7 +100,26 @@ export default function OrderDetailsPage({ orderId, onBack }: OrderDetailsPagePr
             }
         } catch (err) {
             console.error('Error fetching order details:', err);
-            setError('Failed to load order details. Please try again.');
+
+            // Type guard for axios error
+            if (err && typeof err === 'object' && 'request' in err) {
+                const axiosError = err as { response?: { status?: number }; request?: unknown };
+
+                // Check if it's a network error
+                if (!axiosError.response && axiosError.request) {
+                    setError('Check your internet connection');
+                }
+                // Check if it's a backend error
+                else if (axiosError.response?.status && axiosError.response.status >= 500) {
+                    setError('We will fix it soon');
+                }
+                // For other errors
+                else {
+                    setError('Failed to load order details. Please try again.');
+                }
+            } else {
+                setError('Failed to load order details. Please try again.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -135,7 +168,26 @@ export default function OrderDetailsPage({ orderId, onBack }: OrderDetailsPagePr
             }
         } catch (error) {
             console.error('Failed to cancel order:', error);
-            setCancelError('Failed to cancel order. Please try again.');
+
+            // Type guard for axios error
+            if (error && typeof error === 'object' && 'request' in error) {
+                const axiosError = error as { response?: { status?: number }; request?: unknown };
+
+                // Check if it's a network error
+                if (!axiosError.response && axiosError.request) {
+                    setCancelError('Check your internet connection');
+                }
+                // Check if it's a backend error
+                else if (axiosError.response?.status && axiosError.response.status >= 500) {
+                    setCancelError('We will fix it soon');
+                }
+                // For other errors
+                else {
+                    setCancelError('Failed to cancel order. Please try again.');
+                }
+            } else {
+                setCancelError('Failed to cancel order. Please try again.');
+            }
         } finally {
             setIsCancelling(false);
         }
@@ -213,7 +265,17 @@ export default function OrderDetailsPage({ orderId, onBack }: OrderDetailsPagePr
         : (order.Product ? getProductPrice(order.Product) : 0);
 
     // Determine the current status index for progress tracking
-    const getStatusIndex = (status?: string) => {
+    const getStatusIndex = (status?: string, paymentStatus?: string) => {
+        // If payment failed, show payment failed status
+        if (paymentStatus === 'failed' || status?.toLowerCase() === 'payment failed') {
+            return 1; // Show progress to payment failed status
+        }
+
+        // If payment is successful (paid/success) and order was pending, show confirmed status
+        if ((paymentStatus === 'success' || paymentStatus === 'paid') && status?.toLowerCase() === 'pending') {
+            return 1; // Show progress to confirmed status
+        }
+
         if (!status) return 0;
 
         // Normalize status string
@@ -224,6 +286,11 @@ export default function OrderDetailsPage({ orderId, onBack }: OrderDetailsPagePr
             return 1; // Show progress to cancelled status
         }
 
+        // For rejected orders, show direct path from pending to rejected
+        if (normalizedStatus === 'rejected' || normalizedStatus === 'reject') {
+            return 1; // Show progress to rejected status
+        }
+
         // For RTO orders, show path from pending to delivered to RTO
         if (normalizedStatus === 'rto') {
             return 4; // Show progress to RTO status (beyond delivered)
@@ -232,7 +299,8 @@ export default function OrderDetailsPage({ orderId, onBack }: OrderDetailsPagePr
         // Explicit status mapping for better reliability
         switch (normalizedStatus) {
             case 'pending':
-                return 0;
+            case 'payment failed':
+                return 1; // Show progress to payment failed status
             case 'confirm':
             case 'confirmed':
                 return 1;
@@ -248,37 +316,66 @@ export default function OrderDetailsPage({ orderId, onBack }: OrderDetailsPagePr
         }
     };
 
-    const statusIndex = getStatusIndex(order.status);
+    const statusIndex = getStatusIndex(order.status, order.payment_status);
 
-    // Updated status steps to include cancelled and RTO status
-    const statusSteps = order.status === 'cancelled'
+    // Updated status steps to include cancelled, payment failed, and RTO status
+    const statusSteps = order.payment_status === 'failed' || order.status?.toLowerCase() === 'payment failed'
         ? [
-            { name: 'Pending in Confirmation', icon: Clock, color: 'bg-amber-500' },
-            { name: 'Cancelled', icon: XCircle, color: 'bg-red-500' }
+            { name: 'Payment in Pending', icon: Clock, color: 'bg-amber-500' },
+            { name: 'Payment Failed', icon: XCircle, color: 'bg-red-500' }
         ]
-        : order.status === 'rto'
+        : (order.payment_status === 'success' || order.payment_status === 'paid') && order.status?.toLowerCase() === 'pending'
             ? [
-                { name: 'Pending in Confirmation', icon: Clock, color: 'bg-amber-500' },
-                { name: 'Confirmed', icon: Check, color: 'bg-blue-500' },
-                { name: 'Ongoing On the Way', icon: Truck, color: 'bg-indigo-500' },
-                { name: 'Delivered', icon: Check, color: 'bg-green-500' },
-                { name: 'RTO', icon: XCircle, color: 'bg-orange-500' }
-            ]
-            : [
-                { name: 'Pending in Confirmation', icon: Clock, color: 'bg-amber-500' },
-                { name: 'Confirmed', icon: Check, color: 'bg-blue-500' },
-                { name: 'Ongoing On the Way', icon: Truck, color: 'bg-indigo-500' },
+                { name: 'Payment in Pending', icon: Clock, color: 'bg-amber-500' },
+                { name: 'Payment Confirmed', icon: Check, color: 'bg-blue-500' },
+                { name: 'On the Way', icon: Truck, color: 'bg-indigo-500' },
                 { name: 'Delivered', icon: Check, color: 'bg-green-500' }
-            ];
+            ]
+            : order.status === 'cancelled'
+                ? [
+                    { name: 'Payment in Pending', icon: Clock, color: 'bg-amber-500' },
+                    { name: 'Cancelled', icon: XCircle, color: 'bg-red-500' }
+                ]
+                : order.status === 'reject' || order.status === 'rejected'
+                    ? [
+                        { name: 'Payment in Pending', icon: Clock, color: 'bg-amber-500' },
+                        { name: 'Rejected', icon: XCircle, color: 'bg-red-500' }
+                    ]
+                    : order.status === 'rto'
+                        ? [
+                            { name: 'Payment in Pending', icon: Clock, color: 'bg-amber-500' },
+                            { name: 'Payment Confirmed', icon: Check, color: 'bg-blue-500' },
+                            { name: 'On the Way', icon: Truck, color: 'bg-indigo-500' },
+                            { name: 'Delivered', icon: Check, color: 'bg-green-500' },
+                            { name: 'RTO', icon: XCircle, color: 'bg-orange-500' }
+                        ]
+                        : [
+                            { name: 'Payment in Pending', icon: Clock, color: 'bg-amber-500' },
+                            { name: 'Payment Confirmed', icon: Check, color: 'bg-blue-500' },
+                            { name: 'On the Way', icon: Truck, color: 'bg-indigo-500' },
+                            { name: 'Delivered', icon: Check, color: 'bg-green-500' }
+                        ];
 
     const shouldShowCancelButton = (order: Order) => {
-        // Only show cancel button for pending orders
-        if (order.status?.toLowerCase() === 'pending') {
-            return true;
+        // Don't show cancel button if more than 24 hours have passed since order creation
+        const orderDate = new Date(order.createdAt);
+        const now = new Date();
+        const hoursDifference = (now.getTime() - orderDate.getTime()) / (1000 * 60 * 60);
+
+        if (hoursDifference > 24) {
+            return false;
         }
 
-        // For all other statuses, don't show cancel button
-        return false;
+        // Don't show cancel button for delivered, cancelled, rejected, RTO, or payment failed orders
+        const statusLower = order.status?.toLowerCase();
+        if (statusLower === 'delivered' || statusLower === 'cancelled' ||
+            statusLower === 'rejected' || statusLower === 'reject' || statusLower === 'rto' ||
+            statusLower === 'payment failed') {
+            return false;
+        }
+
+        // Show cancel button for all other orders within 24 hours
+        return true;
     };
 
     return (
@@ -300,7 +397,7 @@ export default function OrderDetailsPage({ orderId, onBack }: OrderDetailsPagePr
                 <div className="hidden md:block bg-white rounded-xl shadow-md p-6 mb-8">
                     <div className="flex justify-between relative">
                         {/* Progress line */}
-                        <div className="absolute top-5 left-[60px] right-[15px] h-1 bg-gray-200 -z-0">
+                        <div className="absolute top-5 left-[60px] right-[25px] h-1 bg-gray-200 -z-0">
 
                             <div
                                 className="h-full bg-emerald-500 transition-all duration-500 ease-in-out"
@@ -335,21 +432,29 @@ export default function OrderDetailsPage({ orderId, onBack }: OrderDetailsPagePr
                         <div className="bg-white rounded-xl shadow-md p-6">
                             <div className="flex items-center justify-between mb-6">
                                 <h2 className="text-2xl font-bold text-gray-900">Order #{order.order_id.slice(0, 8)}</h2>
-                                <span className={`px-4 py-2 rounded-lg font-semibold ${order.status === 'cancelled'
+                                <span className={`px-4 py-2 rounded-lg font-semibold ${order.payment_status === 'failed' || order.status?.toLowerCase() === 'payment failed'
                                     ? 'bg-red-100 text-red-700'
-                                    : order.status === 'delivered'
-                                        ? 'bg-green-100 text-green-700'
-                                        : order.status === 'confirm' || order.status === 'confirmed'
-                                            ? 'bg-blue-100 text-blue-700'
-                                            : order.status === 'reject' || order.status === 'rejected'
-                                                ? 'bg-red-100 text-red-700'
-                                                : order.status === 'rto'
-                                                    ? 'bg-orange-100 text-orange-700'
-                                                    : order.status === 'out_for_delivery' || order.status === 'out for delivery' || order.status === 'ongoing'
-                                                        ? 'bg-indigo-100 text-indigo-700'
-                                                        : 'bg-amber-100 text-amber-700'
+                                    : (order.payment_status === 'success' || order.payment_status === 'paid') && order.status?.toLowerCase() === 'pending'
+                                        ? 'bg-blue-100 text-blue-700'
+                                        : order.status === 'cancelled'
+                                            ? 'bg-red-100 text-red-700'
+                                            : order.status === 'delivered'
+                                                ? 'bg-green-100 text-green-700'
+                                                : order.status === 'confirm' || order.status === 'confirmed'
+                                                    ? 'bg-blue-100 text-blue-700'
+                                                    : order.status === 'reject' || order.status === 'rejected'
+                                                        ? 'bg-red-100 text-red-700'
+                                                        : order.status === 'rto'
+                                                            ? 'bg-orange-100 text-orange-700'
+                                                            : order.status === 'out_for_delivery' || order.status === 'out for delivery' || order.status === 'ongoing'
+                                                                ? 'bg-indigo-100 text-indigo-700'
+                                                                : 'bg-amber-100 text-amber-700'
                                     }`}>
-                                    {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1).replace('_', ' ') : 'Pending in Confirmation'}
+                                    {order.payment_status === 'failed' || order.status?.toLowerCase() === 'payment failed'
+                                        ? 'Payment Failed'
+                                        : (order.payment_status === 'success' || order.payment_status === 'paid') && order.status?.toLowerCase() === 'pending'
+                                            ? 'Confirmed'
+                                            : order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1).replace('_', ' ') : 'Pending in Confirmation'}
                                 </span>
                             </div>
 

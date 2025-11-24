@@ -88,43 +88,43 @@ export const login = async (req, res) => {
     // Step 1: Check if email already exists in DB
     const user = await User.findOne({ where: { email } });
 
-    // //IF USER ALREADY EXIST THEN SEND COOKIES ONLY
-    // if (user) {
-    //   const AccessToken = await generateAccessToken(
-    //     { id: user.id, email: user.email },
-    //     process.env.JWT_SECRET
-    //   );
+    //IF USER ALREADY EXIST THEN SEND COOKIES ONLY
+    if (user) {
+      const AccessToken = await generateAccessToken(
+        { id: user.id, email: user.email },
+        process.env.JWT_SECRET
+      );
 
-    //   const RefreshToken = await generateRefressToken(
-    //     { id: user.id, email: user.email },
-    //     process.env.JWT_SECRET
-    //   );
+      const RefreshToken = await generateRefressToken(
+        { id: user.id, email: user.email },
+        process.env.JWT_SECRET
+      );
 
-    //   user.refreshToken = RefreshToken;
-    //   await user.save();
+      user.refreshToken = RefreshToken;
+      await user.save();
 
-    //   res.cookie("accessToken", AccessToken, {
-    //     httpOnly: true,
-    //     maxAge: 15 * 60 * 1000,
-    //     sameSite: "lax", // ✅ important
-    //     secure: false, // ✅ local http ke liye
-    //     path: "/",
-    //   });
-    //   res.cookie("refreshToken", RefreshToken, {
-    //     httpOnly: true,
-    //     maxAge: 7 * 24 * 60 * 60 * 1000,
-    //     sameSite: "lax",
-    //     secure: false,
-    //     path: "/",
-    //   });
+      res.cookie("accessToken", AccessToken, {
+        httpOnly: true,
+        maxAge: 15 * 60 * 1000,
+        sameSite: "lax", // ✅ important
+        secure: false, // ✅ local http ke liye
+        path: "/",
+      });
+      res.cookie("refreshToken", RefreshToken, {
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        sameSite: "lax",
+        secure: false,
+        path: "/",
+      });
 
-    //   return res
-    //     .status(200)
-    //     .json({
-    //       Message: "Login successful check your cookie",
-    //       loginType: "normal",
-    //     });
-    // }
+      return res
+        .status(200)
+        .json({
+          Message: "Login successful check your cookie",
+          loginType: "normal",
+        });
+    }
 
     //IN CASE NEW USER WANTS TO LOGIN
     await supabase.auth.signInWithOtp({

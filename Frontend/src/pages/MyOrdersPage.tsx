@@ -80,15 +80,31 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
       }
       setError(null);
     } catch (error: unknown) {
-      const err = error as { message?: string; response?: { status: number } };
+      // Type guard for axios error
+      if (error && typeof error === 'object' && 'request' in error) {
+        const axiosError = error as { message?: string; response?: { status?: number }; request?: unknown };
 
-      // Handle 404 specifically
-      if (err.response && err.response.status === 404) {
-        setError('Order service is currently unavailable. Please try again later.');
+        // Check if it's a network error
+        if (!axiosError.response && axiosError.request) {
+          setError('Check your internet connection');
+        }
+        // Check if it's a backend error (5xx)
+        else if (axiosError.response?.status && axiosError.response.status >= 500) {
+          setError('We will fix it soon');
+        }
+        // Handle 404 specifically
+        else if (axiosError.response?.status === 404) {
+          setError('Order service is currently unavailable. Please try again later.');
+        }
+        // For other errors
+        else {
+          const errorMessage = axiosError.message || 'Failed to fetch orders. Please try again.';
+          setError(errorMessage);
+        }
       } else {
-        const errorMessage = err.message || 'Failed to fetch orders. Please try again.';
-        setError(errorMessage);
+        setError('Failed to fetch orders. Please try again.');
       }
+
       // Set orders to empty array on error to avoid showing stale data
       setOrders([]);
     } finally {
@@ -271,7 +287,10 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
                       </div>
                       <div className="text-right">
                         <p className="text-xs md:text-sm text-gray-600">
-                          <span className="font-medium">{order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Confirmed'}</span>
+                          <span className="font-medium">
+                            {order.status?.toLowerCase() === 'payment failed' ? 'Payment Failed' :
+                              order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Pending'}
+                          </span>
                         </p>
                       </div>
                     </div>
@@ -285,7 +304,10 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
                       </p>
                       <div className="text-right">
                         <h4 className="text-xs text-gray-600">
-                          <span className="font-medium">{order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Confirmed'}</span>
+                          <span className="font-medium">
+                            {order.status?.toLowerCase() === 'payment failed' ? 'Payment Failed' :
+                              order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Pending'}
+                          </span>
                         </h4>
                       </div>
                     </div>

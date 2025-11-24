@@ -54,9 +54,9 @@ export default function OrderCard({ order, updatingOrderId, onStatusUpdate }: Or
                                 {productName}
                             </p>
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 ${getStatusColor(order.status)}`}>
-                            {getStatusIcon(order.status)}
-                            {getDisplayStatus(order.status)}
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 ${getStatusColor(order.status, order.payment_status)}`}>
+                            {getStatusIcon(order.status, order.payment_status)}
+                            {getDisplayStatus(order.status, order.payment_status)}
                         </span>
                     </div>
 
@@ -80,6 +80,17 @@ export default function OrderCard({ order, updatingOrderId, onStatusUpdate }: Or
                                     minute: '2-digit'
                                 })}
                             </p>
+                            {/* Show payment method and transaction ID if available */}
+                            {order.payment_method && (
+                                <p className="text-gray-500 mt-1">
+                                    <span className="font-medium">Payment Method:</span> {order.payment_method}
+                                </p>
+                            )}
+                            {order.payu_transaction_id && (
+                                <p className="text-gray-500 mt-1">
+                                    <span className="font-medium">Transaction ID:</span> {order.payu_transaction_id}
+                                </p>
+                            )}
                         </div>
                     </div>
 
@@ -93,12 +104,14 @@ export default function OrderCard({ order, updatingOrderId, onStatusUpdate }: Or
                         </p>
                     </div>
 
-                    {/* Status Update Buttons */}
-                    <OrderStatusButtons
-                        order={order}
-                        updatingOrderId={updatingOrderId}
-                        onStatusUpdate={onStatusUpdate}
-                    />
+                    {/* Status Update Buttons - Only show if payment is not failed and not automatically confirmed */}
+                    {(order.payment_status !== 'failed' && !((order.payment_status === 'success' || order.payment_status === 'paid') && order.status.toLowerCase() === 'pending')) && (
+                        <OrderStatusButtons
+                            order={order}
+                            updatingOrderId={updatingOrderId}
+                            onStatusUpdate={onStatusUpdate}
+                        />
+                    )}
                 </div>
             </div>
         </div>

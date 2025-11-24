@@ -39,6 +39,7 @@ export default function OrderFilters({
                     <option value="delivered">Delivered</option>
                     <option value="rto">RTO</option>
                     <option value="reject">Rejected</option>
+                    <option value="payment failed">Payment Failed</option>
                 </select>
             </div>
             <div className="flex items-center gap-2">

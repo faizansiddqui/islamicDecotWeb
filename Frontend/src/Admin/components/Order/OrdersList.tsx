@@ -32,26 +32,57 @@ export default function OrdersList() {
             const response = await adminAPI.getOrders();
 
             if (response.data.status && Array.isArray(response.data.orders)) {
-                setOrders(response.data.orders);
+                // Process orders to automatically update status based on payment status
+                const processedOrders = response.data.orders.map((order: Order) => {
+                    // If payment failed, set order status to 'payment failed'
+                    if (order.payment_status === 'failed') {
+                        return { ...order, status: 'payment failed' };
+                    }
+                    // If payment is successful (paid or success) and order is pending, automatically confirm the order
+                    else if ((order.payment_status === 'success' || order.payment_status === 'paid') && order.status.toLowerCase() === 'pending') {
+                        return { ...order, status: 'confirmed' };
+                    }
+                    // If order is pending (and payment is not successful), automatically set status to 'payment failed'
+                    else if (order.status.toLowerCase() === 'pending') {
+                        return { ...order, status: 'payment failed' };
+                    }
+                    return order;
+                });
+                setOrders(processedOrders);
             } else {
                 setOrders([]);
             }
         } catch (error: unknown) {
             console.error('❌ Error loading orders:', error);
-            const err = error as {
-                response?: {
-                    status?: number;
-                    data?: { message?: string }
-                };
-                message?: string
-            };
 
-            // Handle 404 as no orders found (not an error)
-            if (err.response?.status === 404) {
-                setOrders([]);
+            // Type guard for axios error
+            if (error && typeof error === 'object' && 'request' in error) {
+                const axiosError = error as {
+                    response?: {
+                        status?: number;
+                        data?: { message?: string }
+                    };
+                    message?: string;
+                    request?: unknown;
+                };
+
+                // Check if it's a network error
+                if (!axiosError.response && axiosError.request) {
+                    setOrdersError('Check your internet connection');
+                }
+                // Check if it's a backend error (5xx)
+                else if (axiosError.response?.status && axiosError.response.status >= 500) {
+                    setOrdersError('We will fix it soon');
+                }
+                // Handle 404 as no orders found (not an error)
+                else if (axiosError.response?.status === 404) {
+                    setOrders([]);
+                } else {
+                    const errorMessage = axiosError.response?.data?.message || axiosError.message || 'Failed to load orders. Please try again.';
+                    setOrdersError(errorMessage);
+                }
             } else {
-                const errorMessage = err.response?.data?.message || err.message || 'Failed to load orders. Please try again.';
-                setOrdersError(errorMessage);
+                setOrdersError('Failed to load orders. Please try again.');
             }
         } finally {
             setIsLoadingOrders(false);
@@ -80,15 +111,34 @@ export default function OrdersList() {
             setUpdatingOrderId(null);
         } catch (error: unknown) {
             console.error('❌ Error updating order status:', error);
-            const err = error as {
-                response?: {
-                    status?: number;
-                    data?: { message?: string }
+
+            // Type guard for axios error
+            if (error && typeof error === 'object' && 'request' in error) {
+                const axiosError = error as {
+                    response?: {
+                        status?: number;
+                        data?: { message?: string }
+                    };
+                    message?: string;
+                    request?: unknown;
                 };
-                message?: string
-            };
-            const errorMessage = err.response?.data?.message || err.message || 'Failed to update order status. Please try again.';
-            setOrdersError(errorMessage);
+
+                // Check if it's a network error
+                if (!axiosError.response && axiosError.request) {
+                    setOrdersError('Check your internet connection');
+                }
+                // Check if it's a backend error (5xx)
+                else if (axiosError.response?.status && axiosError.response.status >= 500) {
+                    setOrdersError('We will fix it soon');
+                }
+                // For other errors
+                else {
+                    const errorMessage = axiosError.response?.data?.message || axiosError.message || 'Failed to update order status. Please try again.';
+                    setOrdersError(errorMessage);
+                }
+            } else {
+                setOrdersError('Failed to update order status. Please try again.');
+            }
             setUpdatingOrderId(null);
         }
     };
@@ -105,6 +155,8 @@ export default function OrdersList() {
                     return statusLower === 'confirm' || statusLower === 'confirmed';
                 } else if (statusFilter === 'ongoing') {
                     return statusLower === 'pending' || statusLower === 'ongoing';
+                } else if (statusFilter === 'payment failed') {
+                    return statusLower === 'payment failed';
                 } else {
                     return statusLower === statusFilter;
                 }
@@ -261,9 +313,9 @@ export default function OrdersList() {
                                                 })}
                                             </td>
                                             <td className="py-3 px-4">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${getStatusColor(order.status)}`}>
-                                                    {getStatusIcon(order.status)}
-                                                    {getDisplayStatus(order.status)}
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${getStatusColor(order.status, order.payment_status)}`}>
+                                                    {getStatusIcon(order.status, order.payment_status)}
+                                                    {getDisplayStatus(order.status, order.payment_status)}
                                                 </span>
                                             </td>
                                             <td className="py-3 px-4 text-sm font-medium text-gray-900">
