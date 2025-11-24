@@ -6,43 +6,8 @@ import OrderSuccess from './checkout/OrderSuccess';
 import { navigateTo } from '../utils/navigation';
 import AddressSelector from '../components/AddressSelector';
 import { userAPI } from '../services/api';
-
-// Define Razorpay types
-interface RazorpayOptions {
-  key: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
-  order_id: string;
-  handler: (response: RazorpayResponse) => void;
-  modal: {
-    ondismiss: () => void;
-  };
-  prefill?: {
-    email?: string;
-    phone?: string;
-  };
-  theme: {
-    color: string;
-  };
-}
-
-interface RazorpayResponse {
-  razorpay_payment_id: string;
-  razorpay_order_id: string;
-  razorpay_signature: string;
-}
-
-interface RazorpayInstance {
-  open: () => void;
-}
-
-declare global {
-  interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
-  }
-}
+import PayUPayment from '../components/PayUPayment'; // Add this import
+import { PayUParams } from '../components/PayUPayment'; // Import PayUParams type
 
 interface CheckoutPageProps {
   onBack?: () => void;
@@ -55,6 +20,8 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  // Add state for PayU payment
+  const [payuPaymentData, setPayuPaymentData] = useState<{ payuUrl: string; params: PayUParams } | null>(null);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -62,16 +29,6 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
       navigateTo('/log');
     }
   }, [isAuthenticated, authLoading]);
-
-  // Load Razorpay script if not already loaded
-  useEffect(() => {
-    if (window.Razorpay) return;
-
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
-  }, []);
 
   const subtotal = getTotalPrice();
 
@@ -106,112 +63,36 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
     try {
       // For now, we'll create one order per item in the cart
       // In a real application, you might want to create a single order with multiple items
-      const orderPromises = cartItems.map(item => {
-        return userAPI.createOrder({
-          quantity: item.quantity,
+      // But for PayU, we'll create just one order for the first item as an example
+      if (cartItems.length > 0) {
+        const firstItem = cartItems[0];
+        const response = await userAPI.createOrder({
+          quantity: firstItem.quantity,
           address_id: selectedAddressId,
-          product_id: item.id
+          product_id: firstItem.id
         });
-      });
 
-      // Wait for all orders to be created
-      const results = await Promise.all(orderPromises);
-
-      // Get the first order details for Razorpay checkout
-      if (results.length > 0 && results[0].data) {
-        const orderData = results[0].data;
-
-        // Open Razorpay checkout
-        if (window.Razorpay && orderData.razorpay_order) {
-          // Get user data for prefilling
-          const user = localStorage.getItem('user');
-          let userEmail = '';
-          if (user) {
-            try {
-              const userData = JSON.parse(user);
-              userEmail = userData.email || '';
-            } catch (e) {
-              console.error('Failed to parse user data:', e);
-            }
-          }
-
-          const options: RazorpayOptions = {
-            key: orderData.key, // Razorpay key from backend
-            amount: orderData.razorpay_order.amount,
-            currency: orderData.razorpay_order.currency,
-            name: 'Islamic Decot',
-            description: 'Order Payment',
-            order_id: orderData.razorpay_order.id,
-            handler: function (response: RazorpayResponse) {
-
-              // Set the order ID immediately when payment is successful
-              setOrderId(orderData.local_order_id);
-
-              // Verify payment with backend
-              verifyPayment(response, orderData.local_order_id);
-
-              clearCart();
-              setIsProcessing(false);
-              setOrderPlaced(true);
-            },
-            modal: {
-              ondismiss: function () {
-                // Handle payment cancellation
-                setIsProcessing(false);
-              }
-            },
-            prefill: {
-              email: userEmail,
-            },
-            theme: {
-              color: '#B4540E' // Amber color to match your theme
-            }
-          };
-
-          const rzp = new window.Razorpay(options);
-          rzp.open();
+        // Check if the response contains PayU payment data
+        if (response.data && response.data.payuUrl && response.data.params) {
+          // Set PayU payment data to trigger the PayUPayment component
+          setPayuPaymentData({
+            payuUrl: response.data.payuUrl,
+            params: response.data.params
+          });
         } else {
-          setOrderId(orderData.local_order_id || orderData.order_id);
+          // Handle non-PayU flow (existing logic)
+          if (response.data && response.data.order && response.data.order.order_id) {
+            setOrderId(response.data.order.order_id);
+          }
           clearCart();
           setIsProcessing(false);
           setOrderPlaced(true);
         }
-      } else {
-        throw new Error('Failed to create order');
       }
     } catch (error) {
       console.error('Error creating order:', error);
       setIsProcessing(false);
       alert('Failed to create order. Please try again.');
-    }
-  };
-
-  const verifyPayment = async (response: RazorpayResponse, localOrderId: string) => {
-    try {
-      // Send payment details to backend for verification
-      const result = await userAPI.verifyPayment({
-        razorpay_order_id: response.razorpay_order_id,
-        razorpay_payment_id: response.razorpay_payment_id,
-        razorpay_signature: response.razorpay_signature,
-        order_id: localOrderId
-      });
-
-      if (result.data && result.data.success) {
-        // Set the order ID after successful verification
-        setOrderId(localOrderId);
-      } else {
-        console.warn('Payment verification response:', result.data);
-        // Even if verification response isn't success, still set the order ID
-        setOrderId(localOrderId);
-      }
-    } catch (error) {
-      console.error('Error verifying payment:', error);
-      // Even if verification fails, we still consider the order placed
-      // In a production app, you might want to handle this differently
-      // For example, you might want to show a warning to the user
-      alert('Payment processed but verification failed. Please contact support with your order ID: ' + localOrderId);
-      // Still set the order ID so the user can see it
-      setOrderId(localOrderId);
     }
   };
 
@@ -230,6 +111,11 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
     }
   };
 
+  // If we have PayU payment data, render the PayUPayment component
+  if (payuPaymentData) {
+    return <PayUPayment payuUrl={payuPaymentData.payuUrl} params={payuPaymentData.params} />;
+  }
+
   if (orderPlaced) {
     return <OrderSuccess onContinueShopping={handleContinueShopping} orderId={orderId || undefined} />;
   }
@@ -238,7 +124,7 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-700"></div>
+        <div className="animate-zpin rounded-full h-12 w-12 border-b-2 border-amber-700"></div>
       </div>
     );
   }
@@ -351,16 +237,20 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
                 />
               </div>
 
-              {/* Payment Information - Simplified for default payment method */}
+              {/* Payment Information - Simplified for PayU only */}
               <div className="bg-white rounded-xl shadow-md p-6">
                 <div className="flex items-center gap-2 mb-6">
                   <CreditCard className="text-amber-700" size={24} />
                   <h2 className="text-2xl font-bold text-gray-900">Payment Method</h2>
                 </div>
 
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                {/* Simplified payment info for PayU only */}
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
                   <p className="text-amber-800 font-medium">
-                    Payment will be processed through our secure payment gateway. You'll be redirected to complete your payment.
+                    You will be redirected to PayU to complete your payment.
+                  </p>
+                  <p className="text-amber-700 text-sm mt-2">
+                    PayU is a secure payment gateway that accepts various payment methods including credit cards, debit cards, and net banking.
                   </p>
                 </div>
               </div>

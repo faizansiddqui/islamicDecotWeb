@@ -52,7 +52,7 @@ export default function ProductFormFields({ productForm, categories, onFormChang
 
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Price <span className="text-red-500">*</span>
+              Price($) <span className="text-red-500">*</span>
                 </label>
                 <input
                     type="number"
@@ -66,7 +66,7 @@ export default function ProductFormFields({ productForm, categories, onFormChang
 
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Selling Price <span className="text-red-500">*</span>
+        Selling Price($) <span className="text-red-500">*</span>
                 </label>
                 <input
                     type="number"
@@ -115,7 +115,6 @@ export default function ProductFormFields({ productForm, categories, onFormChang
                 <select
                     value={productForm.catagory}
                     onChange={(e) => {
-                        console.log('🔵 Category selected:', e.target.value);
                         onFormChange('catagory', e.target.value);
                     }}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none"

@@ -1,6 +1,6 @@
 import { CreditCard, User, Lock, Mail, Building2 } from 'lucide-react';
 
-type PaymentMethod = 'credit' | 'debit' | 'paypal' | 'cod' | 'bank';
+type PaymentMethod = 'credit' | 'debit' | 'paypal' | 'cod' | 'bank' | 'payu';
 
 interface PaymentDetailsProps {
     paymentMethod: PaymentMethod;
@@ -172,6 +172,20 @@ export default function PaymentDetails({ paymentMethod, formData, errors, onInpu
         );
     }
 
+    // PayU payment method
+    if (paymentMethod === 'payu') {
+        return (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-amber-800 font-medium">
+                    You will be redirected to PayU to complete your payment.
+                </p>
+                <p className="text-amber-700 text-sm mt-2">
+                    PayU is a secure payment gateway that accepts various payment methods including credit cards, debit cards, and net banking.
+                </p>
+            </div>
+        );
+    }
+
     // Cash on Delivery
     return (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
@@ -181,4 +195,3 @@ export default function PaymentDetails({ paymentMethod, formData, errors, onInpu
         </div>
     );
 }
-

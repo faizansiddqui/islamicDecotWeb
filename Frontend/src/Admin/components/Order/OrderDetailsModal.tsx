@@ -140,6 +140,16 @@ export default function OrderDetailsModal({
                                     <span className="font-medium text-gray-700">Product ID:</span>{' '}
                                     <span className="text-gray-900">#{order.product_id}</span>
                                 </p>
+                                <p className="mt-2">
+                                    <span className="font-medium text-gray-700">Payment Method:</span>{' '}
+                                    <span className="text-gray-900">Paid via PayU</span>
+                                </p>
+                                {order.payu_transaction_id && (
+                                    <p className="mt-2">
+                                        <span className="font-medium text-gray-700">Transaction ID:</span>{' '}
+                                        <span className="text-gray-900">{order.payu_transaction_id}</span>
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <p>

@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Package, ArrowLeft, Calendar } from 'lucide-react';
 import { userAPI } from '../services/api';
 import { navigateTo } from '../utils/navigation';
-import CancelOrderButton from '../components/Order/CancelOrderButton';
 
 interface Product {
   product_id: number;
@@ -37,6 +36,7 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'priceHigh' | 'priceLow'>('newest');
 
   useEffect(() => {
     fetchOrders();
@@ -87,6 +87,19 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
     }
   };
 
+  const sortedOrders = useMemo(() => {
+    const sorted = [...orders];
+
+    switch (sortOption) {
+      case 'newest':
+        return sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      case 'oldest':
+        return sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      default:
+        return sorted;
+    }
+  }, [orders, sortOption]);
+
   const handleBack = () => {
     if (onBack) {
       onBack();
@@ -126,18 +139,6 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
     return 0;
   };
 
-  const handleCancelOrder = async (orderId: string) => {
-    try {
-      // TODO: Implement when backend endpoint is ready
-      // await api.post(`/user/orders/${orderId}/cancel`);
-      // For now, just remove from local state
-      setOrders(prev => prev.filter(order => order.order_id !== orderId));
-    } catch (error) {
-      console.error('Failed to cancel order:', error);
-      throw error;
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -157,7 +158,23 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
           <span className="font-medium">Back</span>
         </button>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">My Orders</h1>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">My Orders</h1>
+
+          {/* Sort Options */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="sort" className="text-sm font-medium text-gray-700">Sort by:</label>
+            <select
+              id="sort"
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value as 'newest' | 'oldest' | 'priceHigh' | 'priceLow')}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+            </select>
+          </div>
+        </div>
 
         {error ? (
           <div className="bg-red-50 border border-red-200 rounded-xl shadow-md p-8 text-center">
@@ -171,7 +188,7 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
               Try Again
             </button>
           </div>
-        ) : orders.length === 0 ? (
+        ) : sortedOrders.length === 0 ? (
           <div className="bg-white rounded-xl shadow-md p-12 text-center">
             <Package size={80} className="mx-auto text-gray-300 mb-6" />
             <h2 className="text-2xl font-bold text-gray-900 mb-4">No orders yet</h2>
@@ -187,62 +204,67 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            {orders.map((order) => (
+            {sortedOrders.map((order) => (
               <div
                 key={order.order_id}
-                className="bg-white rounded-xl shadow-md p-6"
+                className="bg-white rounded-xl shadow-md p-4 md:p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => handleOrderClick(order.order_id)}
               >
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
-                  {order.Product && (
-                    <div className="flex-shrink-0">
-                      <img
-                        src={getProductImage(order.Product)}
-                        alt={order.Product.name}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
-                    </div>
-                  )}
-
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {order.Product?.name || `Order #${order.order_id.slice(0, 8)}`}
-                        </h3>
-                        <p className="text-sm text-gray-500 flex items-center gap-1">
-                          <Calendar size={14} />
-                          {new Date(order.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="space-y-1">
-                        {order.Product && (
-                          <p className="font-medium text-gray-900">
-                            ${getProductPrice(order.Product).toFixed(2)} × {order.quantity} = ${(getProductPrice(order.Product) * (order.quantity || 1)).toFixed(2)}
-                          </p>
-                        )}
-                        <p className="text-sm text-gray-600">
-                          Status: <span className="font-medium">{order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Confirmed'}</span>
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <CancelOrderButton
-                          orderId={order.order_id}
-                          onCancel={handleCancelOrder}
-                          disabled={order.status === 'delivered' || order.status === 'cancelled'}
+                  {/* Image and Name */}
+                  <div className="flex items-center gap-4 flex-1">
+                    {order.Product && (
+                      <div className="flex-shrink-0">
+                        <img
+                          src={getProductImage(order.Product)}
+                          alt={order.Product.name}
+                          className="w-16 h-16 object-cover rounded-lg"
                         />
-                        <button
-                          onClick={() => handleOrderClick(order.order_id)}
-                          className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-sm font-semibold hover:bg-amber-100 transition-colors"
-                        >
-                          View Details
-                        </button>
                       </div>
+                    )}
+                    <div>
+                      <h3 className="text-base md:text-lg font-semibold text-gray-900">
+                        {order.Product?.name || `Order #${order.order_id.slice(0, 8)}`}
+                      </h3>
+                      <p className="text-xs md:text-sm text-gray-500 flex items-center gap-1">
+                        <Calendar size={14} />
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
+
+                  {/* Desktop: Price and Status */}
+                  <div className="hidden md:flex items-center justify-between gap-8 flex-1">
+                    <div className="text-center">
+                      {order.Product && (
+                        <p className="font-medium text-gray-900 text-base md:text-lg">
+                          ${(getProductPrice(order.Product) * (order.quantity || 1)).toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs md:text-sm text-gray-600">
+                        <span className="font-medium">{order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Confirmed'}</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile: Price and Status at the bottom */}
+                <div className="md:hidden flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
+                  <div className="text-left flex flex-row items-center justify-center gap-2">
+                    {order.Product && (
+                      <p className="font-medium text-gray-900 text-base">
+                        ${(getProductPrice(order.Product) * (order.quantity || 1)).toFixed(2)}
+                      </p>
+                    )}
+                    <div className="text-right">
+                      <h4 className="text-xs text-gray-600">
+                        <span className="font-medium">{order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Confirmed'}</span>
+                      </h4>
+                    </div>
+                  </div>
+
                 </div>
               </div>
             ))}

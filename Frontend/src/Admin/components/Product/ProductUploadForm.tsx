@@ -54,10 +54,6 @@ export default function ProductUploadForm() {
     const handleUploadProduct = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        console.log('🔵 Starting product upload...');
-        console.log('🔵 Product form data:', productForm);
-        console.log('🔵 Product images:', productImages.length);
-
         // Validation
         if (productImages.length === 0) {
             setProductError('At least one image is required');
@@ -82,14 +78,6 @@ export default function ProductUploadForm() {
         try {
             const formData = new FormData();
 
-            console.log('🔵 Creating FormData...');
-            console.log('🔵 Product form data before submission:', {
-                ...productForm,
-                quantity: productForm.quantity,
-                quantityType: typeof productForm.quantity,
-                quantityParsed: parseInt(productForm.quantity)
-            });
-
             // Add images
             productImages.forEach((image, index) => {
                 console.log(`🔵 Adding image ${index + 1}:`, image.name, image.type, image.size);
@@ -97,7 +85,6 @@ export default function ProductUploadForm() {
             });
 
             // Add product data according to backend
-            console.log('🔵 Adding form fields...');
             formData.append('name', productForm.name.trim());
             formData.append('title', productForm.title.trim());
             formData.append('price', productForm.price.trim());
@@ -113,16 +100,6 @@ export default function ProductUploadForm() {
             formData.append('description', productForm.description || '');
             formData.append('catagory', productForm.catagory);
 
-            // Log what's actually in FormData
-            console.log('🔵 Form fields added:');
-            console.log('  - name:', productForm.name.trim());
-            console.log('  - title:', productForm.title.trim());
-            console.log('  - price:', productForm.price.trim());
-            console.log('  - selling_price:', productForm.selling_price.trim());
-            console.log('  - quantity:', quantityNum.toString(), '(parsed from:', productForm.quantity, ')');
-            console.log('  - sku:', productForm.sku || '(not provided)');
-            console.log('  - description:', productForm.description || '');
-            console.log('  - catagory:', productForm.catagory);
 
             // Verify quantity in FormData
             const quantityValue = formData.get('quantity');
@@ -133,21 +110,10 @@ export default function ProductUploadForm() {
                 try {
                     const specs = JSON.parse(productForm.specification);
                     formData.append('specification', JSON.stringify(specs));
-                    console.log('🔵 Specification added:', specs);
                 } catch {
                     setProductError('Invalid JSON format for specification');
                     setIsUploadingProduct(false);
                     return;
-                }
-            }
-
-            // Log FormData contents (for debugging)
-            console.log('🔵 FormData created, calling API...');
-            for (const [key, value] of formData.entries()) {
-                if (value instanceof File) {
-                    console.log(`  - ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
-                } else {
-                    console.log(`  - ${key}: ${value}`);
                 }
             }
 
@@ -221,7 +187,6 @@ export default function ProductUploadForm() {
             }
         } finally {
             setIsUploadingProduct(false);
-            console.log('🔵 Product upload process finished');
         }
     };
 

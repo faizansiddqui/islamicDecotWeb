@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { Check } from 'lucide-react';
+import { useCart } from '../../context/CartContext';
 import { navigateTo } from '../../utils/navigation';
 
 interface OrderSuccessProps {
@@ -7,12 +9,28 @@ interface OrderSuccessProps {
 }
 
 export default function OrderSuccess({ onContinueShopping, orderId }: OrderSuccessProps) {
+    const { clearCart } = useCart();
+
+    // Clear the cart when the component mounts
+    useEffect(() => {
+        clearCart();
+    }, [clearCart]);
+
+    // Get order ID from URL query parameters if not provided as prop
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderIdFromUrl = urlParams.get('orderId');
+    const finalOrderId = orderId || orderIdFromUrl;
+
     const handleViewOrder = () => {
-        if (orderId) {
-            navigateTo(`/order/${orderId}`);
+        if (finalOrderId) {
+            navigateTo(`/order/${finalOrderId}`);
         } else {
             onContinueShopping();
         }
+    };
+
+    const handleContinueShopping = () => {
+        navigateTo('/');
     };
 
     return (
@@ -25,12 +43,22 @@ export default function OrderSuccess({ onContinueShopping, orderId }: OrderSucce
                 <p className="text-gray-600 mb-8">
                     Thank you for your purchase. Your order has been confirmed and you will receive an email confirmation shortly.
                 </p>
-                <button
-                    onClick={handleViewOrder}
-                    className="w-full bg-amber-700 hover:bg-amber-800 text-white py-3 rounded-lg font-semibold transition-colors"
-                >
-                    View Order
-                </button>
+
+                <div className="space-y-4">
+                    <button
+                        onClick={handleViewOrder}
+                        className="w-full bg-amber-700 hover:bg-amber-800 text-white py-3 rounded-lg font-semibold transition-colors"
+                    >
+                        View Order Details
+                    </button>
+
+                    <button
+                        onClick={handleContinueShopping}
+                        className="w-full border border-amber-700 text-amber-700 hover:bg-amber-50 py-3 rounded-lg font-semibold transition-colors"
+                    >
+                        Continue Shopping
+                    </button>
+                </div>
             </div>
         </div>
     );

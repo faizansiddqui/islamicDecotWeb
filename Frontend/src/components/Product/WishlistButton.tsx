@@ -17,11 +17,11 @@ export default function WishlistButton({ product, size = 'md', showLabel = false
         setIsWishlisted(isInWishlist(product.product_id));
     }, [product.product_id, isInWishlist]);
 
-    const handleClick = async () => {
+    const handleClick = () => {
         if (isWishlisted) {
-            await removeFromWishlist(product.product_id);
+            removeFromWishlist(product.product_id);
         } else {
-            await addToWishlist(product);
+            addToWishlist(product);
         }
         setIsWishlisted(!isWishlisted);
     };

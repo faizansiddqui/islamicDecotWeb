@@ -197,7 +197,7 @@ export const userAPI = {
         }
     },
 
-    createOrder: (orderData: { quantity: number; address_id: number; product_id: number }) => {
+    createOrder: async (orderData: { quantity: number; address_id: number; product_id: number }) => {
         // Get user ID from localStorage
         const user = localStorage.getItem('user');
         let userId = null;
@@ -210,24 +210,24 @@ export const userAPI = {
             }
         }
 
-        return api.post('/user/create-order', {
-            ...orderData,
-            decode_user: userId
-        }, {
-            withCredentials: true
-        });
+        try {
+            const response = await api.post('/user/create-order', {
+                ...orderData,
+                decode_user: userId
+            }, {
+                withCredentials: true
+            });
+
+            return response;
+        } catch (error) {
+            console.error('Error creating order:', error);
+            throw error;
+        }
     },
 
-    verifyPayment: (paymentData: { 
-        razorpay_order_id: string; 
-        razorpay_payment_id: string; 
-        razorpay_signature: string;
-        order_id: string;
-    }) => {
-        return api.post('/user/verify-payment', paymentData, {
-            withCredentials: true
-        });
-    },
+    cancelOrder: (orderId: string) =>
+        api.post("/user/cancel-order", { order_id: orderId }),
+
 };
 
 // Product API

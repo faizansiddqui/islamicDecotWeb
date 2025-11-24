@@ -12,6 +12,8 @@ export interface Order {
     phone2?: string;
     createdAt: string;
     status: string;
+    payment_method?: string;
+    payu_transaction_id?: string; // Add payu_transaction_id property
     Product?: {
         product_id: number;
         name: string;
@@ -23,12 +25,16 @@ export interface Order {
 }
 
 export const getDisplayStatus = (status: string): string => {
+    // Default to pending if no status provided
+    if (!status) return 'Pending';
+
     const statusLower = status.toLowerCase();
     switch (statusLower) {
         case 'confirm':
         case 'confirmed':
             return 'Confirmed';
         case 'pending':
+            return 'Pending'; // Change this from 'Ongoing' to 'Pending'
         case 'ongoing':
             return 'Ongoing';
         case 'delivered':
@@ -39,17 +45,21 @@ export const getDisplayStatus = (status: string): string => {
         case 'rejected':
             return 'Reject';
         default:
-            return status;
+            return status.charAt(0).toUpperCase() + status.slice(1);
     }
 };
 
 export const getStatusColor = (status: string) => {
+    // Default to pending if no status provided
+    if (!status) return 'bg-amber-100 text-amber-800';
+
     const statusLower = status.toLowerCase();
     switch (statusLower) {
         case 'confirm':
         case 'confirmed':
             return 'bg-blue-100 text-blue-800';
         case 'pending':
+            return 'bg-amber-100 text-amber-800';
         case 'ongoing':
             return 'bg-yellow-100 text-yellow-800';
         case 'delivered':
@@ -65,12 +75,16 @@ export const getStatusColor = (status: string) => {
 };
 
 export const getStatusIcon = (status: string) => {
+    // Default to pending if no status provided
+    if (!status) return <Clock size={16} />;
+
     const statusLower = status.toLowerCase();
     switch (statusLower) {
         case 'confirm':
         case 'confirmed':
             return <CheckCircle size={16} />;
         case 'pending':
+            return <Clock size={16} />;
         case 'ongoing':
             return <Clock size={16} />;
         case 'delivered':
@@ -81,7 +95,7 @@ export const getStatusIcon = (status: string) => {
         case 'rejected':
             return <XCircle size={16} />;
         default:
-            return null;
+            return <Clock size={16} />;
     }
 };
 

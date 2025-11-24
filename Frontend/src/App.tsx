@@ -19,6 +19,7 @@ import ShippingInfoPage from './pages/ShippingInfoPage';
 import ReturnsPage from './pages/ReturnsPage';
 import FAQPage from './pages/FAQPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
+import OrderSuccess from './pages/checkout/OrderSuccess';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import SearchPage from './pages/SearchPage';
@@ -28,7 +29,7 @@ import { useAdminAuth } from './context/AdminAuthContext';
 import { navigateTo } from './utils/navigation';
 // import AuthCallback from './pages/AuthCallback';
 
-type PageType = 'home' | 'admin' | 'cart' | 'checkout' | 'log' | 'verify' | 'profile' | 'orders' | 'order-details' | 'settings' | 'categories' | 'contact' | 'shipping' | 'returns' | 'faq' | 'wishlist' | 'auth-callback' | 'privacy' | 'terms' | 'search' | 'product-details';
+type PageType = 'home' | 'admin' | 'cart' | 'checkout' | 'log' | 'verify' | 'profile' | 'orders' | 'order-details' | 'order-success' | 'settings' | 'categories' | 'contact' | 'shipping' | 'returns' | 'faq' | 'wishlist' | 'auth-callback' | 'privacy' | 'terms' | 'search' | 'product-details';
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -112,6 +113,8 @@ export default function App() {
         setCurrentPage('terms');
       } else if (path === '/search') {
         setCurrentPage('search');
+      } else if (path === '/order-success') {
+        setCurrentPage('order-success');
       } else {
         setCurrentPage('home');
       }
@@ -195,6 +198,10 @@ export default function App() {
 
   if (currentPage === 'product-details' && selectedProductDetailsId) {
     return <ProductDetailsPage productId={selectedProductDetailsId} />;
+  }
+
+  if (currentPage === 'order-success') {
+    return <OrderSuccess onContinueShopping={() => navigateTo('/')} />;
   }
 
   return (

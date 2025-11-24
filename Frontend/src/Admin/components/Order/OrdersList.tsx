@@ -29,9 +29,7 @@ export default function OrdersList() {
         setOrdersError('');
         setOrdersSuccess('');
         try {
-            console.log('🔵 Loading orders...');
             const response = await adminAPI.getOrders();
-            console.log('🟢 Orders loaded:', response.data);
 
             if (response.data.status && Array.isArray(response.data.orders)) {
                 setOrders(response.data.orders);
@@ -66,7 +64,6 @@ export default function OrdersList() {
         setOrdersSuccess('');
 
         try {
-            console.log(`🔵 Updating order ${orderId} status to ${newStatus}`);
             await adminAPI.updateOrderStatus(orderId, newStatus);
 
             // Update the order status in local state without refreshing

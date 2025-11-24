@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Mail, ArrowRight, CheckCircle, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { navigateTo } from '../utils/navigation';
@@ -15,6 +15,11 @@ export default function LoginPage({ onBack }: LoginPageProps) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Resend timer states
+  const [resendTimer, setResendTimer] = useState(0);
+  const [isResendDisabled, setIsResendDisabled] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
   // Redirect authenticated users to home page
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -22,6 +27,37 @@ export default function LoginPage({ onBack }: LoginPageProps) {
       if (onBack) onBack();
     }
   }, [isAuthenticated, user, onBack]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
+  // Timer effect for resend button
+  useEffect(() => {
+    if (resendTimer > 0) {
+      timerRef.current = setInterval(() => {
+        setResendTimer(prev => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current as NodeJS.Timeout);
+            setIsResendDisabled(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [resendTimer]);
 
   // Check for access token in URL (from email link redirect)
   // Supabase sends token in hash fragment
@@ -71,6 +107,9 @@ export default function LoginPage({ onBack }: LoginPageProps) {
     e.preventDefault();
     setError('');
     setSuccess('');
+    // Reset resend timer when submitting a new email
+    setResendTimer(0);
+    setIsResendDisabled(false);
 
     if (!email.trim()) {
       setError('Email is required');
@@ -84,22 +123,15 @@ export default function LoginPage({ onBack }: LoginPageProps) {
 
     setIsLoading(true);
     try {
-      const response = await login(email);
+      await login(email);
 
-      // If user is already registered, they should be authenticated now
-      // Redirect them to home page immediately
-      if (response.loginType === 'normal') {
-        setSuccess('Login successful! Redirecting to your account...');
-        // Force a check of the auth state
-        setTimeout(() => {
-          navigateTo('/');
-          if (onBack) onBack();
-        }, 1500);
-      } else {
-        // New user - they need to check their email
-        setSuccess('Verification email sent! Please check your inbox.');
-        setStep('waiting');
-      }
+      // Always send verification email regardless of user status
+      setSuccess('Verification email sent! Please check your inbox.');
+      setStep('waiting');
+
+      // Start 60-second timer after sending verification email
+      setResendTimer(60);
+      setIsResendDisabled(true);
     } catch (err: unknown) {
       const error = err as { message?: string };
       setError(error.message || 'Failed to send verification email. Please try again.');
@@ -113,21 +145,38 @@ export default function LoginPage({ onBack }: LoginPageProps) {
     setStep('email');
     setError('');
     setSuccess('');
+    // Reset resend timer when going back to email input
+    setResendTimer(0);
+    setIsResendDisabled(false);
   };
 
   const handleResendEmail = async () => {
+    if (isResendDisabled) return;
+
     setError('');
     setSuccess('');
     setIsLoading(true);
+
     try {
       await login(email);
       setSuccess('Verification email resent! Please check your inbox.');
+
+      // Start 60-second timer after resending verification email
+      setResendTimer(60);
+      setIsResendDisabled(true);
     } catch (err: unknown) {
       const error = err as { message?: string };
       setError(error.message || 'Failed to resend email. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Format time for display
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
   // Don't show the login page if user is already authenticated
@@ -192,7 +241,7 @@ export default function LoginPage({ onBack }: LoginPageProps) {
                   </>
                 ) : (
                   <>
-                    Login / SignUp
+                    Send Verification Link
                     <ArrowRight size={20} />
                   </>
                 )}
@@ -219,7 +268,7 @@ export default function LoginPage({ onBack }: LoginPageProps) {
                 <button
                   type="button"
                   onClick={handleResendEmail}
-                  disabled={isLoading}
+                  disabled={isLoading || isResendDisabled}
                   className="w-full bg-amber-700 hover:bg-amber-800 disabled:bg-gray-400 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all"
                 >
                   {isLoading ? (
@@ -234,6 +283,14 @@ export default function LoginPage({ onBack }: LoginPageProps) {
                     </>
                   )}
                 </button>
+
+                {/* Timer display when resend is disabled */}
+                {isResendDisabled && (
+                  <div className="text-center text-sm text-gray-500 mt-2">
+                    You can resend in {formatTime(resendTimer)}
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={handleBackToEmail}

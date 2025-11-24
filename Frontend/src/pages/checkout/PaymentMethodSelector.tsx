@@ -1,6 +1,6 @@
-import { CreditCard, Wallet, Building2 } from 'lucide-react';
+import { CreditCard, Wallet, Building2, CreditCardIcon } from 'lucide-react';
 
-type PaymentMethod = 'credit' | 'debit' | 'paypal' | 'cod' | 'bank';
+type PaymentMethod = 'credit' | 'debit' | 'paypal' | 'cod' | 'bank' | 'payu';
 
 interface PaymentMethodSelectorProps {
     paymentMethod: PaymentMethod;
@@ -9,7 +9,7 @@ interface PaymentMethodSelectorProps {
 
 export default function PaymentMethodSelector({ paymentMethod, onPaymentMethodChange }: PaymentMethodSelectorProps) {
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             <button
                 type="button"
                 onClick={() => onPaymentMethodChange('credit')}
@@ -60,6 +60,18 @@ export default function PaymentMethodSelector({ paymentMethod, onPaymentMethodCh
 
             <button
                 type="button"
+                onClick={() => onPaymentMethodChange('payu')}
+                className={`p-4 border-2 rounded-lg transition-all ${paymentMethod === 'payu'
+                    ? 'border-amber-700 bg-amber-50'
+                    : 'border-gray-300 hover:border-amber-300'
+                    }`}
+            >
+                <CreditCardIcon className="mx-auto mb-2" size={24} />
+                <p className="text-sm font-semibold">PayU</p>
+            </button>
+
+            <button
+                type="button"
                 onClick={() => onPaymentMethodChange('cod')}
                 className={`p-4 border-2 rounded-lg transition-all md:col-span-2 ${paymentMethod === 'cod'
                     ? 'border-amber-700 bg-amber-50'
@@ -72,4 +84,3 @@ export default function PaymentMethodSelector({ paymentMethod, onPaymentMethodCh
         </div>
     );
 }
-

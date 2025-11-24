@@ -33,9 +33,7 @@ export default function ProductsList() {
         setLoading(true);
         setError('');
         try {
-            console.log('🔵 Fetching products...');
             const response = await adminAPI.getProducts();
-            console.log('🟢 Products fetched:', response.data);
 
             if (response.data.status && Array.isArray(response.data.products)) {
                 setProducts(response.data.products);
@@ -90,7 +88,6 @@ export default function ProductsList() {
 
     const handleSave = async (productId: number, data: { price: number; selling_price: number; quantity: number }) => {
         try {
-            console.log(`🔵 Updating product ${productId} with:`, data);
             await adminAPI.updateProduct(productId, data);
 
             // Update the product in the local state

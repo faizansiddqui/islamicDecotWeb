@@ -15,8 +15,13 @@ export default function OrderStatusButtons({ order, updatingOrderId, onStatusUpd
 
         if (isUpdating) return true;
 
-        if (currentStatus === 'reject' || currentStatus === 'rejected' ||
-            currentStatus === 'delivered' || currentStatus === 'rto') {
+        // If order is delivered, only allow RTO
+        if (currentStatus === 'delivered') {
+            return buttonStatusLower !== 'rto';
+        }
+
+        // If order is RTO, reject, or cancelled, disable all buttons
+        if (currentStatus === 'rto' || currentStatus === 'reject' || currentStatus === 'rejected' || currentStatus === 'cancelled') {
             return true;
         }
 
@@ -44,6 +49,11 @@ export default function OrderStatusButtons({ order, updatingOrderId, onStatusUpd
 
         if (currentStatus === buttonStatusLower) {
             return false;
+        }
+
+        // If order is delivered, only show RTO button
+        if (currentStatus === 'delivered') {
+            return buttonStatusLower === 'rto';
         }
 
         if (currentStatus === 'pending') {
