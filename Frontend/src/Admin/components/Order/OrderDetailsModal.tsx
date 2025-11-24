@@ -19,8 +19,6 @@ export default function OrderDetailsModal({
 }: OrderDetailsModalProps) {
     if (!isOpen || !order) return null;
 
-    const productImage = order.Product ? getImageUrl(order.Product.product_image) : '';
-
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -56,43 +54,86 @@ export default function OrderDetailsModal({
                     </div>
 
                     {/* Product Information */}
-                    {order.Product && (
-                        <div className="bg-gray-50 rounded-lg p-4">
-                            <h4 className="font-semibold text-gray-900 mb-4">Product Information</h4>
-                            <div className="flex gap-4">
-                                {productImage && (
-                                    <div className="flex-shrink-0">
-                                        <img
-                                            src={productImage}
-                                            alt={order.Product.name || 'Product'}
-                                            className="w-32 h-32 object-cover rounded-lg border border-gray-200"
-                                            onError={(e) => {
-                                                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/128?text=No+Image';
-                                            }}
-                                        />
-                                    </div>
-                                )}
-                                <div className="flex-1">
-                                    <h5 className="font-semibold text-lg text-gray-900 mb-2">
-                                        {order.Product.name || order.Product.title}
-                                    </h5>
-                                    <div className="space-y-2 text-sm">
-                                        <p>
-                                            <span className="font-medium text-gray-700">Product ID:</span>{' '}
-                                            <span className="text-gray-900">#{order.Product.product_id}</span>
-                                        </p>
-                                        <p>
-                                            <span className="font-medium text-gray-700">Price:</span>{' '}
-                                            <span className="text-gray-900">${order.Product.selling_price}</span>
-                                            {order.Product.price > order.Product.selling_price && (
-                                                <span className="text-gray-500 line-through ml-2">${order.Product.price}</span>
-                                            )}
-                                        </p>
+                    {order.items && order.items.length > 0 ? (
+                        order.items.map((item) => (
+                            <div key={item.order_item_id} className="border-b border-gray-200 pb-6 mb-6 last:border-0 last:pb-0 last:mb-0">
+                                <h4 className="font-semibold text-gray-900 mb-4">Product Information</h4>
+                                <div className="flex gap-4">
+                                    {item.Product && getImageUrl(item.Product.product_image) && (
+                                        <div className="flex-shrink-0">
+                                            <img
+                                                src={getImageUrl(item.Product.product_image)}
+                                                alt={item.Product.name || item.Product.title}
+                                                className="w-32 h-32 object-cover rounded-lg border border-gray-200"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/128?text=No+Image';
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="flex-1">
+                                        <h5 className="font-semibold text-lg text-gray-900 mb-2">
+                                            {item.Product.name || item.Product.title}
+                                        </h5>
+                                        <div className="space-y-2 text-sm">
+                                            <p>
+                                                <span className="font-medium text-gray-700">Product ID:</span>{' '}
+                                                <span className="text-gray-900">#{item.Product.product_id}</span>
+                                            </p>
+                                            <p>
+                                                <span className="font-medium text-gray-700">Price:</span>{' '}
+                                                <span className="text-gray-900">${item.Product.selling_price}</span>
+                                                {item.Product.price > item.Product.selling_price && (
+                                                    <span className="text-gray-500 line-through ml-2">${item.Product.price}</span>
+                                                )}
+                                            </p>
+                                            <p>
+                                                <span className="font-medium text-gray-700">Quantity:</span>{' '}
+                                                <span className="text-gray-900">{item.quantity}</span>
+                                            </p>
+                                            <p>
+                                                <span className="font-medium text-gray-700">Total:</span>{' '}
+                                                <span className="text-gray-900">${(item.Product.selling_price * item.quantity).toFixed(2)}</span>
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                        ))
+                    ) : order.Product ? (
+                        <div className="flex gap-4">
+                            {getImageUrl(order.Product.product_image) && (
+                                <div className="flex-shrink-0">
+                                    <img
+                                        src={getImageUrl(order.Product.product_image)}
+                                        alt={order.Product.name || order.Product.title}
+                                        className="w-32 h-32 object-cover rounded-lg border border-gray-200"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/128?text=No+Image';
+                                        }}
+                                    />
+                                </div>
+                            )}
+                            <div className="flex-1">
+                                <h5 className="font-semibold text-lg text-gray-900 mb-2">
+                                    {order.Product.name || order.Product.title}
+                                </h5>
+                                <div className="space-y-2 text-sm">
+                                    <p>
+                                        <span className="font-medium text-gray-700">Product ID:</span>{' '}
+                                        <span className="text-gray-900">#{order.Product.product_id}</span>
+                                    </p>
+                                    <p>
+                                        <span className="font-medium text-gray-700">Price:</span>{' '}
+                                        <span className="text-gray-900">${order.Product.selling_price}</span>
+                                        {order.Product.price > order.Product.selling_price && (
+                                            <span className="text-gray-500 line-through ml-2">${order.Product.price}</span>
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                    )}
+                    ) : null}
 
                     {/* Customer Information */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -135,10 +176,6 @@ export default function OrderDetailsModal({
                                 <p>
                                     <span className="font-medium text-gray-700">Order ID:</span>{' '}
                                     <span className="text-gray-900">{order.order_id}</span>
-                                </p>
-                                <p className="mt-2">
-                                    <span className="font-medium text-gray-700">Product ID:</span>{' '}
-                                    <span className="text-gray-900">#{order.product_id}</span>
                                 </p>
                                 <p className="mt-2">
                                     <span className="font-medium text-gray-700">Payment Method:</span>{' '}

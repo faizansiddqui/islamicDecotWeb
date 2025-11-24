@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
 import { ArrowLeft, CreditCard, Lock } from 'lucide-react';
 import OrderSuccess from './checkout/OrderSuccess';
-import { navigateTo } from '../utils/navigation';
 import AddressSelector from '../components/AddressSelector';
 import { userAPI } from '../services/api';
 import PayUPayment from '../components/PayUPayment'; // Add this import
 import { PayUParams } from '../components/PayUPayment'; // Import PayUParams type
+import { useAuthProtection } from '../utils/authProtection';
 
 interface CheckoutPageProps {
   onBack?: () => void;
@@ -15,19 +14,12 @@ interface CheckoutPageProps {
 
 export default function CheckoutPage({ onBack }: CheckoutPageProps) {
   const { cartItems, getTotalPrice, clearCart } = useCart();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading } = useAuthProtection();
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   // Add state for PayU payment
   const [payuPaymentData, setPayuPaymentData] = useState<{ payuUrl: string; params: PayUParams } | null>(null);
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigateTo('/log');
-    }
-  }, [isAuthenticated, authLoading]);
 
   const subtotal = getTotalPrice();
 
@@ -60,30 +52,30 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
     setIsProcessing(true);
 
     try {
-      // For now, we'll create one order per item in the cart
-      // In a real application, you might want to create a single order with multiple items
-      // But for PayU, we'll create just one order for the first item as an example
-      if (cartItems.length > 0) {
-        const firstItem = cartItems[0];
-        const response = await userAPI.createOrder({
-          quantity: firstItem.quantity,
-          address_id: selectedAddressId,
-          product_id: firstItem.id
-        });
+      // Create items array from cart items
+      const items = cartItems.map(item => ({
+        product_id: item.id,
+        quantity: item.quantity
+      }));
 
-        // Check if the response contains PayU payment data
-        if (response.data && response.data.payuUrl && response.data.params) {
-          // Set PayU payment data to trigger the PayUPayment component
-          setPayuPaymentData({
-            payuUrl: response.data.payuUrl,
-            params: response.data.params
-          });
-        } else {
-          // Handle non-PayU flow (existing logic)
-          clearCart();
-          setIsProcessing(false);
-          setOrderPlaced(true);
-        }
+      // Create order with all items
+      const response = await userAPI.createOrder({
+        address_id: selectedAddressId!,
+        items
+      });
+
+      // Check if the response contains PayU payment data
+      if (response.data && response.data.payuUrl && response.data.params) {
+        // Set PayU payment data to trigger the PayUPayment component
+        setPayuPaymentData({
+          payuUrl: response.data.payuUrl,
+          params: response.data.params
+        });
+      } else {
+        // Handle non-PayU flow (existing logic)
+        clearCart();
+        setIsProcessing(false);
+        setOrderPlaced(true);
       }
     } catch (error) {
       console.error('Error creating order:', error);
@@ -125,23 +117,8 @@ export default function CheckoutPage({ onBack }: CheckoutPageProps) {
     );
   }
 
-  // Redirect if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Please Sign In</h2>
-          <p className="text-gray-600 mb-8">You need to be signed in to proceed to checkout.</p>
-          <button
-            onClick={() => navigateTo('/log')}
-            className="w-full bg-amber-700 hover:bg-amber-800 text-white py-3 rounded-lg font-semibold transition-colors"
-          >
-            Sign In
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // The useAuthProtection hook handles authentication redirect automatically
+  // No need for manual authentication check here
 
   if (cartItems.length === 0) {
     return (

@@ -5,6 +5,7 @@ import { userAPI } from '../services/api';
 import AddressForm from '../components/AddressForm';
 import { Settings, LogOut, Shield, Globe, ArrowLeft, MapPin, Plus, Edit } from 'lucide-react';
 import { navigateTo } from '../utils/navigation';
+import { useAuthProtection } from '../utils/authProtection';
 
 interface SettingsPageProps {
   onBack?: () => void;
@@ -26,6 +27,7 @@ interface Address {
 export default function SettingsPage({ onBack }: SettingsPageProps) {
   const { user, logout } = useAuth();
   const { saveCartToLocalStorage } = useCart();
+  useAuthProtection(); // Protect this route
   // const [notifications, setNotifications] = useState(true);
   // const [emailNotifications, setEmailNotifications] = useState(true);
   const [addresses, setAddresses] = useState<Address[]>([]);

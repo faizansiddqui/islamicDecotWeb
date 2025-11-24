@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Check, Clock, Package, Truck, XCircle } from 'lucide-react';
 import { userAPI } from '../services/api';
 import { navigateTo } from '../utils/navigation';
+import { useAuthProtection } from '../utils/authProtection';
 
 interface Product {
     product_id: number;
@@ -12,9 +13,18 @@ interface Product {
     description?: string;
 }
 
-interface Order {
+// Add OrderItem interface
+interface OrderItem {
+    order_item_id: number;
     order_id: string;
     product_id: number;
+    quantity: number;
+    price: string;
+    Product: Product;
+}
+
+interface Order {
+    order_id: string;
     FullName: string;
     address: string;
     city: string;
@@ -24,10 +34,11 @@ interface Order {
     phone2?: string;
     createdAt: string;
     status?: string;
-    quantity?: number;
-    Product?: Product;
+    totalAmount: string;
     payment_method?: string;
     payu_transaction_id?: string;
+    Product?: Product;
+    items?: OrderItem[]; // Add items array
 }
 
 interface OrderDetailsPageProps {
@@ -36,6 +47,7 @@ interface OrderDetailsPageProps {
 }
 
 export default function OrderDetailsPage({ orderId, onBack }: OrderDetailsPageProps) {
+    const { isLoading: authLoading } = useAuthProtection();
     const [order, setOrder] = useState<Order | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -129,7 +141,7 @@ export default function OrderDetailsPage({ orderId, onBack }: OrderDetailsPagePr
         }
     };
 
-    if (isLoading) {
+    if (authLoading || isLoading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-700"></div>
@@ -195,7 +207,10 @@ export default function OrderDetailsPage({ orderId, onBack }: OrderDetailsPagePr
         );
     }
 
-    const totalPrice = getProductPrice(order.Product) * (order.quantity || 1);
+    // Calculate total price from items or Product
+    const totalPrice = order.items && order.items.length > 0
+        ? order.items.reduce((sum, item) => sum + (getProductPrice(item.Product) * item.quantity), 0)
+        : (order.Product ? getProductPrice(order.Product) : 0);
 
     // Determine the current status index for progress tracking
     const getStatusIndex = (status?: string) => {
@@ -338,45 +353,87 @@ export default function OrderDetailsPage({ orderId, onBack }: OrderDetailsPagePr
                                 </span>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row gap-6">
-                                {order.Product && (
-                                    <div className="flex-shrink-0">
-                                        <img
-                                            src={getProductImage(order.Product)}
-                                            alt={order.Product.name}
-                                            className="w-32 h-32 object-cover rounded-lg cursor-pointer"
-                                            onClick={() => navigateTo(`/product/${order.Product?.product_id}`)}
-                                        />
+                            {order.items && order.items.length > 0 ? (
+                                order.items.map((item) => (
+                                    <div key={item.order_item_id} className="flex flex-col sm:flex-row gap-6 mb-6 pb-6 border-b border-gray-100 last:mb-0 last:pb-0 last:border-0">
+                                        {item.Product && (
+                                            <div className="flex-shrink-0">
+                                                <img
+                                                    src={getProductImage(item.Product)}
+                                                    alt={item.Product.name}
+                                                    className="w-32 h-32 object-cover rounded-lg cursor-pointer"
+                                                    onClick={() => navigateTo(`/product/${item.Product?.product_id}`)}
+                                                />
+                                            </div>
+                                        )}
+                                        <div className="flex-1">
+                                            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                                {item.Product?.name || 'Product'}
+                                            </h3>
+
+                                            {item.Product?.description && (
+                                                <p className="text-gray-600 mb-4">{item.Product.description}</p>
+                                            )}
+
+                                            <div className="space-y-2">
+                                                <p className="flex justify-between">
+                                                    <span className="text-gray-600">Price:</span>
+                                                    <span className="font-medium">${getProductPrice(item.Product).toFixed(2)}</span>
+                                                </p>
+                                                <p className="flex justify-between">
+                                                    <span className="text-gray-600">Quantity:</span>
+                                                    <span className="font-medium">{item.quantity}</span>
+                                                </p>
+                                                <div className="border-t border-gray-200 pt-2 mt-2">
+                                                    <p className="flex justify-between text-lg font-bold">
+                                                        <span>Total:</span>
+                                                        <span className="text-amber-700">${(getProductPrice(item.Product) * item.quantity).toFixed(2)}</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                )}
-
-                                <div className="flex-1">
-                                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                                        {order.Product?.name || 'Product'}
-                                    </h3>
-
-                                    {order.Product?.description && (
-                                        <p className="text-gray-600 mb-4">{order.Product.description}</p>
+                                ))
+                            ) : order.Product ? (
+                                <div className="flex flex-col sm:flex-row gap-6">
+                                    {order.Product && (
+                                        <div className="flex-shrink-0">
+                                            <img
+                                                src={getProductImage(order.Product)}
+                                                alt={order.Product.name}
+                                                className="w-32 h-32 object-cover rounded-lg cursor-pointer"
+                                                onClick={() => navigateTo(`/product/${order.Product?.product_id}`)}
+                                            />
+                                        </div>
                                     )}
+                                    <div className="flex-1">
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                            {order.Product?.name || 'Product'}
+                                        </h3>
 
-                                    <div className="space-y-2">
-                                        <p className="flex justify-between">
-                                            <span className="text-gray-600">Price:</span>
-                                            <span className="font-medium">${getProductPrice(order.Product).toFixed(2)}</span>
-                                        </p>
-                                        <p className="flex justify-between">
-                                            <span className="text-gray-600">Quantity:</span>
-                                            <span className="font-medium">{order.quantity}</span>
-                                        </p>
-                                        <div className="border-t border-gray-200 pt-2 mt-2">
-                                            <p className="flex justify-between text-lg font-bold">
-                                                <span>Total:</span>
-                                                <span className="text-amber-700">${totalPrice.toFixed(2)}</span>
+                                        {order.Product?.description && (
+                                            <p className="text-gray-600 mb-4">{order.Product.description}</p>
+                                        )}
+
+                                        <div className="space-y-2">
+                                            <p className="flex justify-between">
+                                                <span className="text-gray-600">Price:</span>
+                                                <span className="font-medium">${getProductPrice(order.Product).toFixed(2)}</span>
                                             </p>
+                                            <p className="flex justify-between">
+                                                <span className="text-gray-600">Quantity:</span>
+                                                <span className="font-medium">1</span>
+                                            </p>
+                                            <div className="border-t border-gray-200 pt-2 mt-2">
+                                                <p className="flex justify-between text-lg font-bold">
+                                                    <span>Total:</span>
+                                                    <span className="text-amber-700">${totalPrice.toFixed(2)}</span>
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            ) : null}
 
                             {/* Cancel Order Button - Only show if order can be cancelled */}
                             {shouldShowCancelButton(order) ? (

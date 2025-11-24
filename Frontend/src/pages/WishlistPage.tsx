@@ -4,8 +4,10 @@ import ProductCard from '../components/Product/ProductCard';
 import { useCart } from '../context/CartContext';
 import { navigateTo } from '../utils/navigation';
 import { Product } from '../utils/productUtils';
+import { useAuthProtection } from '../utils/authProtection';
 
 export default function WishlistPage() {
+    useAuthProtection(); // Protect this route
     const { wishlistItems, removeFromWishlist } = useWishlist();
     const { addToCart } = useCart();
 

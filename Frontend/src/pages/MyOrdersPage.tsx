@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Package, ArrowLeft, Calendar } from 'lucide-react';
 import { userAPI } from '../services/api';
 import { navigateTo } from '../utils/navigation';
+import { useAuthProtection } from '../utils/authProtection';
 
 interface Product {
   product_id: number;
@@ -12,9 +13,18 @@ interface Product {
   description?: string;
 }
 
-interface Order {
+// Add OrderItem interface
+interface OrderItem {
+  order_item_id: number;
   order_id: string;
   product_id: number;
+  quantity: number;
+  price: string;
+  Product: Product;
+}
+
+interface Order {
+  order_id: string;
   FullName: string;
   address: string;
   city: string;
@@ -24,8 +34,11 @@ interface Order {
   phone2?: string;
   createdAt: string;
   status?: string;
-  quantity?: number;
+  totalAmount: string;
+  payment_method?: string;
+  payu_transaction_id?: string;
   Product?: Product;
+  items?: OrderItem[]; // Add items array
 }
 
 interface MyOrdersPageProps {
@@ -33,6 +46,7 @@ interface MyOrdersPageProps {
 }
 
 export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
+  const { isLoading: authLoading } = useAuthProtection();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,13 +75,8 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
           ordersData = response.data.data;
         }
 
-        // Ensure each order has a quantity of at least 1
-        const processedOrders = ordersData.map(order => ({
-          ...order,
-          quantity: order.quantity || 1
-        }));
-
-        setOrders(processedOrders);
+        // No need to process quantity as it's handled in the item calculation
+        setOrders(ordersData);
       }
       setError(null);
     } catch (error: unknown) {
@@ -139,7 +148,7 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
     return 0;
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-700"></div>
@@ -204,70 +213,87 @@ export default function MyOrdersPage({ onBack }: MyOrdersPageProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            {sortedOrders.map((order) => (
-              <div
-                key={order.order_id}
-                className="bg-white rounded-xl shadow-md p-4 md:p-6 cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => handleOrderClick(order.order_id)}
-              >
-                <div className="flex flex-col md:flex-row md:items-center gap-4">
-                  {/* Image and Name */}
-                  <div className="flex items-center gap-4 flex-1">
-                    {order.Product && (
-                      <div className="flex-shrink-0">
-                        <img
-                          src={getProductImage(order.Product)}
-                          alt={order.Product.name}
-                          className="w-16 h-16 object-cover rounded-lg"
-                        />
-                      </div>
-                    )}
-                    <div>
-                      <h3 className="text-base md:text-lg font-semibold text-gray-900">
-                        {order.Product?.name || `Order #${order.order_id.slice(0, 8)}`}
-                      </h3>
-                      <p className="text-xs md:text-sm text-gray-500 flex items-center gap-1">
-                        <Calendar size={14} />
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
+            {sortedOrders.map((order) => {
+              // Get product image from items or Product
+              const productImage = order.items && order.items.length > 0
+                ? getProductImage(order.items[0].Product)
+                : (order.Product ? getProductImage(order.Product) : '');
 
-                  {/* Desktop: Price and Status */}
-                  <div className="hidden md:flex items-center justify-between gap-8 flex-1">
-                    <div className="text-center">
-                      {order.Product && (
-                        <p className="font-medium text-gray-900 text-base md:text-lg">
-                          ${(getProductPrice(order.Product) * (order.quantity || 1)).toFixed(2)}
-                        </p>
+              // Get product name from items or Product
+              const productName = order.items && order.items.length > 0
+                ? (order.items[0].Product?.name || `Order #${order.order_id.slice(0, 8)}`)
+                : (order.Product?.name || `Order #${order.order_id.slice(0, 8)}`);
+
+              // Calculate total price from items or Product
+              let totalPrice = 0;
+              if (order.items && order.items.length > 0) {
+                totalPrice = order.items.reduce((sum, item) =>
+                  sum + (getProductPrice(item.Product) * item.quantity), 0);
+              } else if (order.Product) {
+                totalPrice = getProductPrice(order.Product);
+              }
+
+              return (
+                <div
+                  key={order.order_id}
+                  className="bg-white rounded-xl shadow-md p-4 md:p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => handleOrderClick(order.order_id)}
+                >
+                  <div className="flex flex-col md:flex-row md:items-center gap-4">
+                    {/* Image and Name */}
+                    <div className="flex items-center gap-4 flex-1">
+                      {productImage && (
+                        <div className="flex-shrink-0">
+                          <img
+                            src={productImage}
+                            alt={productName}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
+                        </div>
                       )}
+                      <div>
+                        <h3 className="text-base md:text-lg font-semibold text-gray-900">
+                          {productName}
+                        </h3>
+                        <p className="text-xs md:text-sm text-gray-500 flex items-center gap-1">
+                          <Calendar size={14} />
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs md:text-sm text-gray-600">
-                        <span className="font-medium">{order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Confirmed'}</span>
-                      </p>
+
+                    {/* Desktop: Price and Status */}
+                    <div className="hidden md:flex items-center justify-between gap-8 flex-1">
+                      <div className="text-center">
+                        <p className="font-medium text-gray-900 text-base md:text-lg">
+                          ${totalPrice.toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs md:text-sm text-gray-600">
+                          <span className="font-medium">{order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Confirmed'}</span>
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Mobile: Price and Status at the bottom */}
-                <div className="md:hidden flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
-                  <div className="text-left flex flex-row items-center justify-center gap-2">
-                    {order.Product && (
+                  {/* Mobile: Price and Status at the bottom */}
+                  <div className="md:hidden flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
+                    <div className="text-left flex flex-row items-center justify-center gap-2">
                       <p className="font-medium text-gray-900 text-base">
-                        ${(getProductPrice(order.Product) * (order.quantity || 1)).toFixed(2)}
+                        ${totalPrice.toFixed(2)}
                       </p>
-                    )}
-                    <div className="text-right">
-                      <h4 className="text-xs text-gray-600">
-                        <span className="font-medium">{order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Confirmed'}</span>
-                      </h4>
+                      <div className="text-right">
+                        <h4 className="text-xs text-gray-600">
+                          <span className="font-medium">{order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Confirmed'}</span>
+                        </h4>
+                      </div>
                     </div>
                   </div>
-
                 </div>
-              </div>
-            ))}
+              );
+            })}
+
           </div>
         )}
       </div>

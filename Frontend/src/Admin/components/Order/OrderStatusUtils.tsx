@@ -1,8 +1,24 @@
 import { CheckCircle, XCircle, Truck, Clock } from 'lucide-react';
 
-export interface Order {
+// Add OrderItem interface
+interface OrderItem {
+    order_item_id: number;
     order_id: string;
     product_id: number;
+    quantity: number;
+    price: string;
+    Product: {
+        product_id: number;
+        name: string;
+        title: string;
+        price: number;
+        selling_price: number;
+        product_image: string | string[] | { [key: string]: string };
+    };
+}
+
+export interface Order {
+    order_id: string;
     FullName: string;
     address: string;
     city: string;
@@ -12,6 +28,7 @@ export interface Order {
     phone2?: string;
     createdAt: string;
     status: string;
+    totalAmount: string;
     payment_method?: string;
     payu_transaction_id?: string; // Add payu_transaction_id property
     Product?: {
@@ -22,6 +39,7 @@ export interface Order {
         selling_price: number;
         product_image: string | string[] | { [key: string]: string };
     };
+    items?: OrderItem[]; // Add items array
 }
 
 export const getDisplayStatus = (status: string): string => {
@@ -113,4 +131,3 @@ export const getImageUrl = (productImage: string | string[] | { [key: string]: s
     }
     return '';
 };
-

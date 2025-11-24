@@ -244,7 +244,7 @@ export default function OrdersList() {
                                             <td className="py-3 px-4">
                                                 <div className="flex items-center gap-3">
                                                     <span className="text-sm text-gray-900">
-                                                        {order.Product?.name || order.Product?.title || 'N/A'}
+                                                        {getProductName(order)}
                                                     </span>
                                                 </div>
                                             </td>
@@ -267,7 +267,7 @@ export default function OrdersList() {
                                                 </span>
                                             </td>
                                             <td className="py-3 px-4 text-sm font-medium text-gray-900">
-                                                ${order.Product?.selling_price || 'N/A'}
+                                                ${getProductPrice(order)}
                                             </td>
                                         </tr>
                                     );
@@ -295,3 +295,19 @@ export default function OrdersList() {
         </div>
     );
 }
+
+// Get product name from items or Product
+const getProductName = (order: Order) => {
+    if (order.items && order.items.length > 0) {
+        return order.items[0].Product.name || order.items[0].Product.title || 'N/A';
+    }
+    return order.Product?.name || order.Product?.title || 'N/A';
+};
+
+// Get product price from items or Product
+const getProductPrice = (order: Order) => {
+    if (order.items && order.items.length > 0) {
+        return order.items[0].Product.selling_price || 'N/A';
+    }
+    return order.Product?.selling_price || 'N/A';
+};

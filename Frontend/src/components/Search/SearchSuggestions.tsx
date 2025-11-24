@@ -23,7 +23,10 @@ export default function SearchSuggestions({ suggestions, onSelect, searchQuery }
                     return (
                         <button
                             key={product.product_id}
-                            onClick={() => onSelect(product.product_id)}
+                            onMouseDown={(e) => {
+                                e.preventDefault(); // Prevent blur event
+                                onSelect(product.product_id);
+                            }}
                             className="w-full flex items-center gap-4 px-3 py-3 hover:bg-amber-50 rounded-lg transition-colors text-left"
                         >
                             {imageUrl && (

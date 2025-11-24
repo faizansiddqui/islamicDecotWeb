@@ -197,7 +197,7 @@ export const userAPI = {
         }
     },
 
-    createOrder: async (orderData: { quantity: number; address_id: number; product_id: number }) => {
+    createOrder: async (orderData: { address_id: number; items: Array<{ product_id: number; quantity: number }> }) => {
         // Get user ID from localStorage
         const user = localStorage.getItem('user');
         let userId = null;
