@@ -27,7 +27,7 @@ import WishlistPage from './pages/WishlistPage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
 import { useAdminAuth } from './context/AdminAuthContext';
 import { navigateTo } from './utils/navigation';
-// import AuthCallback from './pages/AuthCallback';
+import AuthCallback from './pages/AuthCallback';
 
 type PageType = 'home' | 'admin' | 'cart' | 'checkout' | 'log' | 'verify' | 'profile' | 'orders' | 'order-details' | 'order-success' | 'settings' | 'categories' | 'contact' | 'shipping' | 'returns' | 'faq' | 'wishlist' | 'auth-callback' | 'privacy' | 'terms' | 'search' | 'product-details';
 
@@ -143,6 +143,10 @@ export default function App() {
   if (currentPage === 'log' || currentPage === 'verify') {
     return <LoginPage onBack={() => navigateTo('/')} />;
   }
+
+  if (currentPage === 'auth-callback') {
+  return <AuthCallback />;
+}
 
   if (currentPage === 'profile') {
     return <ProfilePage onBack={() => navigateTo('/')} />;

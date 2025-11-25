@@ -134,7 +134,8 @@ export const login = async (req, res) => {
     await supabase.auth.signInWithOtp({
       email: email,
       options: {
-        emailRedirectTo: `${process.env.FRONTEND_URL}/api/auth/verify`,
+        // emailRedirectTo: `${process.env.FRONTEND_URL}/api/auth/verify`,
+        emailRedirectTo: `${process.env.FRONTEND_URL}/auth/callback`,
       },
     });
 
