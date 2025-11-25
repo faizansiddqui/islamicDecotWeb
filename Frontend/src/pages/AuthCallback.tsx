@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { navigateTo } from "../utils/navigation";
+import { useNavigate } from "react-router-dom";
 
 export default function AuthCallback() {
     const { verifyEmail } = useAuth();
+    const navigate = useNavigate();
 
     useEffect(() => {
         const handleAuth = async () => {
@@ -24,22 +25,23 @@ export default function AuthCallback() {
                 }
 
                 if (!access_token) {
-                    console.error("No access token found in callback URL");
-                    navigateTo("/");
+                    console.error("AuthCallback: No access token found in callback URL");
+                    navigate("/");
                     return;
                 }
 
                 // Send token to backend for verification using the context function
                 await verifyEmail(access_token);
-                navigateTo("/"); // redirect after login
+                console.log("AuthCallback: Verification successful, redirecting to home");
+                navigate("/"); // redirect after login
             } catch (err) {
-                console.error("Auth callback error:", err);
-                navigateTo("/log"); // redirect to login page on error
+                console.error("AuthCallback: Authentication error:", err);
+                navigate("/log"); // redirect to login page on error
             }
         };
 
         handleAuth();
-    }, [verifyEmail]);
+    }, [verifyEmail, navigate]);
 
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
