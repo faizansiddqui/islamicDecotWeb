@@ -14,11 +14,10 @@ export const google = async (req, res) => {
         queryParams: {
           response_type: "code",
         },
-        redirectTo: `${process.env.FRONTEND_URL}/api/auth/callback`,
+        redirectTo: `${process.env.FRONTEND_URL}/api/auth/verify`,
       },
     });
 
-    console.log(data);
 
     res.redirect(data.url);
   } catch (error) {
@@ -68,13 +67,13 @@ export const varifyEmail = async (req, res) => {
       httpOnly: true,
       maxAge: 15 * 60 * 1000,
       secure: true,
-  sameSite: "none",
+      sameSite: "none",
     });
     res.cookie("refreshToken", RefreshToken, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
       secure: true,
-  sameSite: "none",
+      sameSite: "none",
     });
 
     res.status(200).json({ Message: "Login successful check your cookie" });
