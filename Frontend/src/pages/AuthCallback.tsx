@@ -14,8 +14,19 @@ export default function AuthCallback() {
                 // Extract token from hash (#) - the URL uses hash-based routing
                 const hash = window.location.hash.substring(1);
                 if (hash) {
+                    // Try to parse as URLSearchParams first
                     const params = new URLSearchParams(hash);
                     access_token = params.get("access_token");
+                    console.log("AuthCallback: Token from URLSearchParams:", access_token);
+
+                    // If that doesn't work, try to extract manually
+                    if (!access_token) {
+                        const tokenMatch = hash.match(/access_token=([^&]*)/);
+                        if (tokenMatch && tokenMatch[1]) {
+                            access_token = decodeURIComponent(tokenMatch[1]);
+                            console.log("AuthCallback: Token from regex match:", access_token);
+                        }
+                    }
                 }
 
                 // If not found in hash, check query parameters
