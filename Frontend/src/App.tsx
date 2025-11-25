@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar/Navbar';
 import Hero from './components/Hero/Hero';
 import BestSellers from './components/BestSellers';
@@ -25,202 +26,66 @@ import TermsOfServicePage from './pages/TermsOfServicePage';
 import SearchPage from './pages/SearchPage';
 import WishlistPage from './pages/WishlistPage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
-import { useAdminAuth } from './context/AdminAuthContext';
-import { navigateTo } from './utils/navigation';
 import AuthCallback from './pages/AuthCallback';
+import { useParams } from 'react-router-dom';
 
-type PageType = 'home' | 'admin' | 'cart' | 'checkout' | 'log' | 'verify' | 'profile' | 'orders' | 'order-details' | 'order-success' | 'settings' | 'categories' | 'contact' | 'shipping' | 'returns' | 'faq' | 'wishlist' | 'auth-callback' | 'privacy' | 'terms' | 'search' | 'product-details';
+// Wrapper component for OrderDetailsPage to extract orderId from route params
+const OrderDetailsPageRoute = () => {
+  const { orderId } = useParams<{ orderId: string }>();
+  return <OrderDetailsPage orderId={orderId || ''} onBack={() => window.history.back()} />;
+};
+
+// Wrapper component for ProductDetailsPage to extract productId from route params
+const ProductDetailsPageRoute = () => {
+  const { productId } = useParams<{ productId: string }>();
+  const productIdNum = productId ? parseInt(productId, 10) : 0;
+  return <ProductDetailsPage productId={productIdNum} />;
+};
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState<PageType>('home');
-  const { isAdminLoggedIn, logout: adminLogout } = useAdminAuth();
-
-  // State for order details
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-
-  // State for product details
-  const [selectedProductDetailsId, setSelectedProductDetailsId] = useState<number | null>(null);
-
-  // Track previous path to detect route changes
-  const previousPathRef = useRef<string>(window.location.pathname);
-
-  // Check URL pathname for page routing and listen for popstate changes
-  useEffect(() => {
-    const handleRouteChange = () => {
-      const path = window.location.pathname;
-      const hash = window.location.hash;
-      const previousPath = previousPathRef.current;
-
-      // If admin is logged in and navigates to any non-admin route, logout admin
-      if (isAdminLoggedIn && path !== '/admin' && path !== '/') {
-        adminLogout();
-        // Continue to the user route they wanted to visit
-      }
-
-      // If admin is logged in and navigates to home
-      if (isAdminLoggedIn && previousPath === '/admin' && path === '/') {
-        adminLogout();
-      }
-
-      previousPathRef.current = path;
-
-      // Check for hash-based auth callback URLs (for localhost testing)
-      if (hash.startsWith('#access_token=')) {
-        setCurrentPage('auth-callback');
-      } else if (path === '/admin') {
-        setCurrentPage('admin');
-      } else if (path === '/auth/callback') {
-        setCurrentPage('auth-callback');
-      } else if (path === '/cart') {
-        setCurrentPage('cart');
-      } else if (path === '/checkout') {
-        setCurrentPage('checkout');
-      } else if (path === '/log') {
-        setCurrentPage('log');
-      } else if (path === '/api/auth/verify') {
-        setCurrentPage('verify');
-      } else if (path === '/profile') {
-        setCurrentPage('profile');
-      } else if (path === '/orders') {
-        setCurrentPage('orders');
-      } else if (path.startsWith('/order/')) {
-        const orderId = path.split('/').pop() || '';
-        setSelectedOrderId(orderId);
-        setCurrentPage('order-details');
-      } else if (path.startsWith('/product/')) {
-        const productId = path.split('/').pop();
-        if (productId) {
-          const productIdNum = parseInt(productId, 10);
-          if (!isNaN(productIdNum)) {
-            setSelectedProductDetailsId(productIdNum);
-            setCurrentPage('product-details');
-          }
-        }
-      } else if (path === '/wishlist') {
-        setCurrentPage('wishlist');
-      } else if (path === '/settings') {
-        setCurrentPage('settings');
-      } else if (path === '/categories') {
-        setCurrentPage('categories');
-      } else if (path === '/contact') {
-        setCurrentPage('contact');
-      } else if (path === '/shipping') {
-        setCurrentPage('shipping');
-      } else if (path === '/returns') {
-        setCurrentPage('returns');
-      } else if (path === '/faq') {
-        setCurrentPage('faq');
-      } else if (path === '/privacy') {
-        setCurrentPage('privacy');
-      } else if (path === '/terms') {
-        setCurrentPage('terms');
-      } else if (path === '/search') {
-        setCurrentPage('search');
-      } else if (path === '/order-success') {
-        setCurrentPage('order-success');
-      } else {
-        setCurrentPage('home');
-      }
-    };
-
-    // Check initial path
-    handleRouteChange();
-
-    // Listen for popstate (back/forward browser navigation)
-    window.addEventListener('popstate', handleRouteChange);
-    return () => window.removeEventListener('popstate', handleRouteChange);
-  }, [isAdminLoggedIn, adminLogout]);
-
-  if (currentPage === 'admin') {
-    return <AdminPage onBack={() => navigateTo('/')} />;
-  }
-
-  if (currentPage === 'cart') {
-    return <CartPage onBack={() => navigateTo('/')} />;
-  }
-
-  if (currentPage === 'checkout') {
-    return <CheckoutPage onBack={() => navigateTo('/cart')} />;
-  }
-
-  if (currentPage === 'log' || currentPage === 'verify') {
-    return <LoginPage onBack={() => navigateTo('/')} />;
-  }
-
-  if (currentPage === 'auth-callback') {
-    return <AuthCallback />;
-  }
-
-  if (currentPage === 'profile') {
-    return <ProfilePage onBack={() => navigateTo('/')} />;
-  }
-
-  if (currentPage === 'orders') {
-    return <MyOrdersPage onBack={() => navigateTo('/')} />;
-  }
-
-  if (currentPage === 'order-details' && selectedOrderId) {
-    return <OrderDetailsPage orderId={selectedOrderId} onBack={() => navigateTo('/orders')} />;
-  }
-
-  if (currentPage === 'settings') {
-    return <SettingsPage onBack={() => navigateTo('/')} />;
-  }
-
-  if (currentPage === 'categories') {
-    return <CategoryPage onBack={() => navigateTo('/')} onSearchChange={setSearchQuery} />;
-  }
-
-  if (currentPage === 'search') {
-    return <SearchPage onBack={() => navigateTo('/')} onSearchChange={setSearchQuery} />;
-  }
-
-  if (currentPage === 'contact') {
-    return <ContactPage onBack={() => navigateTo('/')} />;
-  }
-
-  if (currentPage === 'shipping') {
-    return <ShippingInfoPage onBack={() => navigateTo('/')} />;
-  }
-
-  if (currentPage === 'returns') {
-    return <ReturnsPage onBack={() => navigateTo('/')} />;
-  }
-
-  if (currentPage === 'faq') {
-    return <FAQPage onBack={() => navigateTo('/')} />;
-  }
-
-  if (currentPage === 'privacy') {
-    return <PrivacyPolicyPage onBack={() => navigateTo('/')} />;
-  }
-
-  if (currentPage === 'terms') {
-    return <TermsOfServicePage onBack={() => navigateTo('/')} />;
-  }
-
-  if (currentPage === 'wishlist') {
-    return <WishlistPage />;
-  }
-
-  if (currentPage === 'product-details' && selectedProductDetailsId) {
-    return <ProductDetailsPage productId={selectedProductDetailsId} />;
-  }
-
-  if (currentPage === 'order-success') {
-    return <OrderSuccess onContinueShopping={() => navigateTo('/')} />;
-  }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar onSearchChange={setSearchQuery} />
-      <Hero />
-      <BestSellers />
-      <NewArrivals />
-      <ProductGrid searchQuery={searchQuery} />
-      <Features />
-      <Footer />
-    </div>
+    <Router>
+      <div className="min-h-screen bg-white">
+        <Navbar onSearchChange={setSearchQuery} />
+
+        <Routes>
+          <Route path="/" element={
+            <>
+              <Hero />
+              <BestSellers />
+              <NewArrivals />
+              <ProductGrid searchQuery={searchQuery} />
+              <Features />
+            </>
+          } />
+
+          <Route path="/admin" element={<AdminPage onBack={() => window.history.back()} />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/cart" element={<CartPage onBack={() => window.history.back()} />} />
+          <Route path="/checkout" element={<CheckoutPage onBack={() => window.history.back()} />} />
+          <Route path="/log" element={<LoginPage onBack={() => window.history.back()} />} />
+          <Route path="/api/auth/verify" element={<LoginPage onBack={() => window.history.back()} />} />
+          <Route path="/profile" element={<ProfilePage onBack={() => window.history.back()} />} />
+          <Route path="/orders" element={<MyOrdersPage onBack={() => window.history.back()} />} />
+          <Route path="/order/:orderId" element={<OrderDetailsPageRoute />} />
+          <Route path="/order-success" element={<OrderSuccess onContinueShopping={() => window.location.href = '/'} />} />
+          <Route path="/product/:productId" element={<ProductDetailsPageRoute />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/settings" element={<SettingsPage onBack={() => window.history.back()} />} />
+          <Route path="/categories" element={<CategoryPage onBack={() => window.history.back()} onSearchChange={setSearchQuery} />} />
+          <Route path="/contact" element={<ContactPage onBack={() => window.history.back()} />} />
+          <Route path="/shipping" element={<ShippingInfoPage onBack={() => window.history.back()} />} />
+          <Route path="/returns" element={<ReturnsPage onBack={() => window.history.back()} />} />
+          <Route path="/faq" element={<FAQPage onBack={() => window.history.back()} />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage onBack={() => window.history.back()} />} />
+          <Route path="/terms" element={<TermsOfServicePage onBack={() => window.history.back()} />} />
+          <Route path="/search" element={<SearchPage onBack={() => window.history.back()} onSearchChange={setSearchQuery} />} />
+        </Routes>
+
+        <Footer />
+      </div>
+    </Router>
   );
 }

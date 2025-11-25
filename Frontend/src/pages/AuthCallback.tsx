@@ -8,13 +8,20 @@ export default function AuthCallback() {
     useEffect(() => {
         const handleAuth = async () => {
             try {
+                let access_token = null;
 
                 // Extract token from hash (#) - the URL uses hash-based routing
                 const hash = window.location.hash.substring(1);
+                if (hash) {
+                    const params = new URLSearchParams(hash);
+                    access_token = params.get("access_token");
+                }
 
-                const params = new URLSearchParams(hash);
-                const access_token = params.get("access_token");
-
+                // If not found in hash, check query parameters
+                if (!access_token) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    access_token = urlParams.get("access_token");
+                }
 
                 if (!access_token) {
                     console.error("No access token found in callback URL");
