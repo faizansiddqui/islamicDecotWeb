@@ -74,14 +74,14 @@ export default function App() {
           <Route path="/product/:productId" element={<ProductDetailsPageRoute />} />
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/settings" element={<SettingsPage onBack={() => window.history.back()} />} />
-          <Route path="/categories" element={<CategoryPage onBack={() => window.history.back()} onSearchChange={setSearchQuery} />} />
+          <Route path="/categories" element={<CategoryPage onBack={() => window.history.back()} />} />
           <Route path="/contact" element={<ContactPage onBack={() => window.history.back()} />} />
           <Route path="/shipping" element={<ShippingInfoPage onBack={() => window.history.back()} />} />
           <Route path="/returns" element={<ReturnsPage onBack={() => window.history.back()} />} />
           <Route path="/faq" element={<FAQPage onBack={() => window.history.back()} />} />
           <Route path="/privacy" element={<PrivacyPolicyPage onBack={() => window.history.back()} />} />
           <Route path="/terms" element={<TermsOfServicePage onBack={() => window.history.back()} />} />
-          <Route path="/search" element={<SearchPage onBack={() => window.history.back()} onSearchChange={setSearchQuery} />} />
+          <Route path="/search" element={<SearchPage onBack={() => window.history.back()} />} />
         </Routes>
 
         <Footer />

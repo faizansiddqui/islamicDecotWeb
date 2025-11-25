@@ -3,7 +3,6 @@ import { ArrowLeft } from 'lucide-react';
 import { productAPI } from '../../services/api';
 import ProductCard from '../../components/Product/ProductCard';
 import ProductDetails from '../../components/Product/ProductDetails';
-import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import CategorySelector from './CategorySelector';
 import ProductSortDropdown from './ProductSortDropdown';
@@ -26,10 +25,9 @@ interface Product {
 
 interface CategoryPageProps {
     onBack: () => void;
-    onSearchChange: (query: string) => void;
 }
 
-export default function CategoryPage({ onBack, onSearchChange }: CategoryPageProps) {
+export default function CategoryPage({ onBack }: CategoryPageProps) {
     // Load categories from centralized data file
     const categoriesData = getCategories();
     const hardcodedCategories: Category[] = [
@@ -181,7 +179,6 @@ export default function CategoryPage({ onBack, onSearchChange }: CategoryPagePro
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <Navbar onSearchChange={onSearchChange} />
 
             <div className="bg-white shadow-sm sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
