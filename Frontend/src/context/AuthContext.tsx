@@ -30,9 +30,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const checkAuth = async () => {
         try {
+
             // Check if user info is stored in localStorage
             const savedUser = localStorage.getItem('user');
             const isAuth = localStorage.getItem('isAuthenticated');
+
 
             if (savedUser && isAuth === 'true') {
                 try {
@@ -43,7 +45,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     localStorage.removeItem('user');
                     localStorage.removeItem('isAuthenticated');
                 }
-            } 
+            } else {
+                console.log('AuthContext: No saved user data or not authenticated');
+            }
         } catch (error) {
             console.error('❌ AuthContext: Auth check failed:', error);
         } finally {
@@ -126,9 +130,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             const response = await authAPI.verifyEmail(token);
 
+
             // Backend sets httpOnly cookies (accessToken, refreshToken)
             // and returns success message
-            if (response.data && response.data.Message) {
+            // Check for various possible response formats
+            if (response.data &&
+                (response.data.Message ||
+                    response.data.message ||
+                    response.data.success ||
+                    response.data.status === 200 ||
+                    response.data.status === 'success')) {
                 // Store user data extracted from token
                 const userData = {
                     id: userId,
@@ -138,15 +149,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(userData);
                 localStorage.setItem('user', JSON.stringify(userData));
                 localStorage.setItem('isAuthenticated', 'true');
+
                 return;
             }
 
+            console.warn('AuthContext: Unexpected response format', response);
             throw new Error('Invalid response from server');
         } catch (error: unknown) {
             const err = error as {
                 response?: {
                     status?: number;
-                    data?: { message?: string; Message?: string }
+                    data?: { message?: string; Message?: string; error?: string }
                 };
                 message?: string
             };
@@ -157,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 throw new Error('Invalid or expired token. Please try logging in again.');
             }
 
-            const errorMessage = err.response?.data?.message || err.response?.data?.Message || err.message || 'Verification failed. Please try again.';
+            const errorMessage = err.response?.data?.message || err.response?.data?.Message || err.response?.data?.error || err.message || 'Verification failed. Please try again.';
             throw new Error(errorMessage);
         }
     };

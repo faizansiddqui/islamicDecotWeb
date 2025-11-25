@@ -49,6 +49,7 @@ export default function App() {
   useEffect(() => {
     const handleRouteChange = () => {
       const path = window.location.pathname;
+      const hash = window.location.hash;
       const previousPath = previousPathRef.current;
 
       // If admin is logged in and navigates to any non-admin route, logout admin
@@ -64,7 +65,10 @@ export default function App() {
 
       previousPathRef.current = path;
 
-      if (path === '/admin') {
+      // Check for hash-based auth callback URLs (for localhost testing)
+      if (hash.startsWith('#access_token=')) {
+        setCurrentPage('auth-callback');
+      } else if (path === '/admin') {
         setCurrentPage('admin');
       } else if (path === '/auth/callback') {
         setCurrentPage('auth-callback');
@@ -145,8 +149,8 @@ export default function App() {
   }
 
   if (currentPage === 'auth-callback') {
-  return <AuthCallback />;
-}
+    return <AuthCallback />;
+  }
 
   if (currentPage === 'profile') {
     return <ProfilePage onBack={() => navigateTo('/')} />;

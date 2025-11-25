@@ -22,7 +22,13 @@ export default function Navbar({ onSearchChange }: NavbarProps) {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const expandedSearchRef = useRef<HTMLDivElement>(null);
   const { getTotalItems, saveCartToLocalStorage } = useCart();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
+
+  // Debug authentication status
+  useEffect(() => {
+    console.log('Navbar: isAuthenticated:', isAuthenticated);
+    console.log('Navbar: user:', user);
+  }, [isAuthenticated, user]);
 
   // Load all products for suggestions
   useEffect(() => {
