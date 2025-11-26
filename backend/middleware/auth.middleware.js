@@ -39,7 +39,7 @@ if (decoded && decoded.id) {
     httpOnly: true,
     maxAge: 15 * 60 * 1000,
      secure: true,
-  sameSite: "none",
+     sameSite: "none",
   });
 
     req.body.decode_user= decoded.id;
