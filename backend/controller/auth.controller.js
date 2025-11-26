@@ -8,7 +8,7 @@ import {
 
 import otpStore from "../config/otpStore.js";
 import { generateOTP } from "../config/generateOtp.js";
-import { transporter } from "../config/nodemailer.js";
+import { resend } from "../config/nodemailer.js";
 
 export const google = async (req, res) => {
   try {
@@ -164,7 +164,7 @@ export const login = async (req, res) => {
 
     otpStore.setOTP(email, otp); // closure store
 
-   await transporter.sendMail({
+  await resend.emails.send({
   from: '"Abdullah Islamic Store" <no-reply@abdullahislamicstore.com>', // ✅ domain email use karo
   to: email,
   subject: "Your One-Time Login Code – Abdullah Islamic Store",
