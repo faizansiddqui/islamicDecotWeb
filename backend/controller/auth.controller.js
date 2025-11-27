@@ -165,7 +165,7 @@ export const login = async (req, res) => {
     otpStore.setOTP(email, otp); // closure store
 
   await resend.emails.send({
-  from: '"Abdullah Islamic Store" <no-reply@abdullahislamicstore.com>', // ✅ domain email use karo
+  from: 'Website <no-reply@kiswahmakkahstore.com>', // ✅ domain email use karo
   to: email,
   subject: "Your One-Time Login Code – Abdullah Islamic Store",
   text: `Assalamu Alaikum,
