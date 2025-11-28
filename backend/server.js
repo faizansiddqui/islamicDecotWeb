@@ -9,9 +9,12 @@ import cors from "cors";
 
 
 app.use(cors({
-  origin:["http://localhost:5500","https://tatamart.in", "http://localhost:5173","http://127.0.0.1:5500", process.env.FRONTEND_URL].filter(Boolean),
+  origin:["https://tatamart.in", process.env.FRONTEND_URL].filter(Boolean),
   credentials:true,
 }))
+app.set("trust proxy", 1);
+app.options("*", cors());
+
 
 
 app.get('/', async(request,response)=>{
