@@ -340,6 +340,30 @@ const getProducts = async (req, res) => {
   }
 };
 
+export const deleteProduct = async (req,res)=>{
+ try {
+   const productId = req.body;
+  if(!productId) return res.status(404).json({status:false,Message:"Cant not remove product."});
+
+
+  //delete product from db
+ const result = await Products.destroy({
+    where:{product_id:productId}
+  });
+
+  res.status(200).json({status:true,Message:"Product remove Successful"})
+  
+ } catch (error) {
+
+     res.status(500).json({error})
+  
+ }
+
+
+
+
+}
+
 
 
 

@@ -5,7 +5,7 @@ export const User = connection.define('User',{
     id:{
         type:DataTypes.STRING,
         unique:true,
-        allownull:false,
+        allowNull:false,
         primaryKey:true
      },
      email:{

@@ -14,12 +14,11 @@ const Addresses = connection.define("Addresses", {
   phone1: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true,
   },
   phone2: {
     type: DataTypes.STRING,
     allowNull: true,
-    unique: true,
+   
   },
   country: {
     type: DataTypes.STRING,

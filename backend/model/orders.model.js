@@ -21,7 +21,7 @@ export const Orders = connection.define("Orders", {
   phone2: {
     type: DataTypes.STRING,
     allowNull: true,
-    unique: true,
+    // unique: true,
   },
   state: {
     type: DataTypes.STRING,

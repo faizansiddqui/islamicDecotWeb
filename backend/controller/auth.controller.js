@@ -48,7 +48,8 @@ export const varifyEmail = async (req, res) => {
     const [user, created] = await User.findOrCreate({
       where: { email: email },
       defaults: {
-        email: email,            // Supabase id ki jagah email
+        id:v4(),
+        email: email,            
         refreshToken: null,
       },
     });
@@ -76,6 +77,7 @@ export const varifyEmail = async (req, res) => {
       maxAge: 15 * 60 * 1000,
       secure: true, // use false in localhost http
       sameSite: "none",
+     path: "/"
     });
 
     res.cookie("refreshToken", RefreshToken, {
@@ -83,6 +85,7 @@ export const varifyEmail = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       secure: true,
       sameSite: "none",
+      path: "/"
     });
 
     return res.status(200).json({

@@ -42,7 +42,9 @@ export const OrderItems = connection.define("OrderItems", {
 // Order -> OrderItems
 Orders.hasMany(OrderItems, {
   foreignKey: "order_id",
-  as: "items"
+  as: "items",
+  onDelete:"CASCADE",
+  onUpdate:"CASCADE"
 });
 
 OrderItems.belongsTo(Orders, {

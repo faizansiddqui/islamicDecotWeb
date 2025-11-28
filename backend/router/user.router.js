@@ -57,7 +57,8 @@ router.post('/clear-cart', authMiddleware, clearUserCart);
 //address related routes
 router.patch('/update-user-address', authMiddleware, updateUserAddress);
 router.post('/create-newAddress', authMiddleware, createAddress);
-router.post('/get-user-addresess', authMiddleware, getUserAddresess)
+router.post('/get-user-addresess', authMiddleware, getUserAddresess);
+
 
 
 export { router };
