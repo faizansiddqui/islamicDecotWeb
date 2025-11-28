@@ -9,7 +9,7 @@ import cors from "cors";
 app.set("trust proxy", 1);
 
 app.use(cors({
-  origin:["https://tatamart.in", process.env.FRONTEND_URL].filter(Boolean),
+  origin:process.env.FRONTEND_URL,
   credentials:true,
 }))
 

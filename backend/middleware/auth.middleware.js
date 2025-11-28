@@ -4,21 +4,25 @@ import {
   generateAccessToken,
 } from "../services/token.js";
 
-async function checkRefreshToken(refreshToken,req, res, next) {
-  //If no Refresh
+async function checkRefreshToken(refreshToken, req, res, next) {
   if (!refreshToken) {
-  //  return res.redirect(`${process.env.FRONTEND_ULR}/login`);
-  return res.status(401).json({Message:"Unauthorized user"})
+    return res.status(401).json({ Message: "Unauthorized user" });
   }
 
   const decoded = await varifyToken(refreshToken, process.env.JWT_SECRET);
-if (decoded && decoded.id) {
-  req.body.decode_user = decoded.id;
-  return next();
-}
+
+  if (decoded && decoded.id) {
+    const user = await User.findOne({ where: { id: decoded.id } });
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    req.body.decode_user = user.id;
+    return next();
+  }
+
   const user = await User.findOne({ where: { refreshToken } });
 
-  // If no user found with this refresh token
   if (!user) {
     return res.status(403).json({ message: "Invalid refresh token" });
   }
@@ -31,22 +35,21 @@ if (decoded && decoded.id) {
     id: user.id,
     email: user.email,
   };
-  const AccessToken = await generateAccessToken(data, process.env.JWT_SECRET);
 
+  const accessToken = await generateAccessToken(data, process.env.JWT_SECRET);
 
-
-  res.cookie("accessToken", AccessToken, {
+  res.cookie("accessToken", accessToken, {
     httpOnly: true,
     maxAge: 15 * 60 * 1000,
-     secure: true,
-     sameSite: "none",
+    secure: true,
+    sameSite: "none",
+    path: "/"
   });
 
-    req.body.decode_user= decoded.id;
- 
-
+  req.body.decode_user = user.id;
   next();
 }
+
 
 export const authMiddleware = async (req, res, next) => {
   try {
