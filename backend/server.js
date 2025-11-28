@@ -9,7 +9,7 @@ import cors from "cors";
 
 
 app.use(cors({
-  origin:["http://localhost:5500","https://islamic-decot-web.vercel.app", "http://localhost:5173","http://127.0.0.1:5500", process.env.FRONTEND_URL].filter(Boolean),
+  origin:["http://localhost:5500","https://tatamart.in", "http://localhost:5173","http://127.0.0.1:5500", process.env.FRONTEND_URL].filter(Boolean),
   credentials:true,
 }))
 
