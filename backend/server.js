@@ -6,14 +6,14 @@ import { router as userRouter } from './router/user.router.js';
 import {router as authRouter} from './router/auth.router.js'
 import cors from "cors";
 
-
+app.set("trust proxy", 1);
 
 app.use(cors({
   origin:["https://tatamart.in", process.env.FRONTEND_URL].filter(Boolean),
   credentials:true,
 }))
-app.set("trust proxy", 1);
-app.options("*", cors());
+
+app.options(/.*/, cors());
 
 
 
