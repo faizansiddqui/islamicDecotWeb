@@ -831,7 +831,7 @@ export const addProductReviews = async (req, res) => {
   try {
     const { user_name, review_title, review_text, review_rate, product_id } =
     req.body;
-  const reviewImage = req.files || [];
+  const reviewImage = req.file || [];
 
   
 
