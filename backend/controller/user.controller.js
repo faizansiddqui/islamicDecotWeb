@@ -1,6 +1,7 @@
 //user controller
 
-
+import paypal from "@paypal/checkout-server-sdk";
+import paypalClient from "../config/payPal.js";
 import { Catagories } from "../model/catagory.model.js";
 import { Products, ProductSpecification } from "../model/product.model.js";
 import { Orders } from "../model/orders.model.js";
@@ -9,7 +10,8 @@ import { User } from "../model/user.model.js";
 import Addresses from "../model/addresses.model.js";
 import AddToCart from "../model/addToCart.model.js";
 import { OrderItems } from "../model/orderItem.model.js";
-import crypto from "crypto";
+import { ProductReviews } from "../model/productsReviews.model.js";
+import { supabase } from "../config/supabase.config.js";
 import { Transaction, where, Op } from "sequelize";
 
 const getProductByCatagory = async (req, res) => {
@@ -47,7 +49,9 @@ const getProductById = async (req, res) => {
     });
 
     if (!data.length) {
-      return res.status(404).send("<h1>Product not found</h1>");
+      return res
+        .status(404)
+        .json({ status: false, Message: "product not found" });
     }
     res.status(200).json({ status: 200, data: data });
   } catch (error) {
@@ -67,8 +71,8 @@ const searchProduct = async (req, res) => {
     [Op.or]: [
       { name: { [Op.iLike]: `%${search}%` } },
       { title: { [Op.iLike]: `%${search}%` } },
-      { description: { [Op.iLike]: `%${search}%` } }
-    ]
+      { description: { [Op.iLike]: `%${search}%` } },
+    ],
   };
 
   //Add Price field in where condition in case if user wants to search with price filter
@@ -87,8 +91,6 @@ const searchProduct = async (req, res) => {
   }
 };
 
-
-
 export const order = async (req, res) => {
   try {
     const { address_id, items, decode_user } = req.body;
@@ -99,7 +101,7 @@ export const order = async (req, res) => {
     }
 
     const userAddress = await Addresses.findOne({
-      where: { id: address_id }
+      where: { id: address_id },
     });
 
     if (!userAddress) {
@@ -113,12 +115,12 @@ export const order = async (req, res) => {
     for (const item of items) {
       const product = await Products.findOne({
         where: { product_id: item.product_id },
-        attributes: ["selling_price", "quantity", "product_id"]
+        attributes: ["selling_price", "quantity", "product_id"],
       });
 
       if (!product || product.quantity < item.quantity) {
         return res.status(400).json({
-          message: `Out of stock: ${item.product_id}`
+          message: `Out of stock: ${item.product_id}`,
         });
       }
 
@@ -128,30 +130,85 @@ export const order = async (req, res) => {
       productCache.push({ product, quantity: item.quantity });
     }
 
-    // ✅ Get user email
-    const userEmail = await User.findOne({
-      where: { id: decode_user },
-      attributes: ['email']
-    });
-
-    const firstname = userAddress.FullName;
-    const email = userEmail.email;
-
     const amountUSD = totalAmount.toFixed(2);
-    const orderId = v4();
-    const txnid = "USD_" + orderId;
 
-    // ✅ HASH — Same as before
-    const hashString =
-      `${process.env.PAYU_KEY}|${txnid}|${amountUSD}|USD_Payment|` +
-      `${firstname}|${email}|||||||||||${process.env.PAYU_SALT}`;
+    // // ✅ Create main order
+    // await Orders.create({
+    //   order_id: orderId,
+    //   user_id: decode_user,
+    //   totalAmount: amountUSD,
+    //   FullName: userAddress.FullName,
+    //   phone1: userAddress.phone1,
+    //   phone2: userAddress.phone2,
+    //   state: userAddress.state,
+    //   city: userAddress.city,
+    //   pinCode: userAddress.pinCode,
+    //   address: userAddress.address,
+    //   addressType: userAddress.addressType
+    // });
 
-    const hash = crypto
-      .createHash("sha512")
-      .update(hashString)
-      .digest("hex");
+    // // ✅ Insert order items + reduce stock
+    // for (const row of productCache) {
+    //   await OrderItems.create({
+    //     order_id: orderId,
+    //     product_id: row.product.product_id,
+    //     quantity: row.quantity,
+    //     price: row.product.selling_price
+    //   });
 
+    //   const newQty = row.product.quantity - row.quantity;
+    //   await Products.update(
+    //     { quantity: newQty },
+    //     { where: { product_id: row.product.product_id } }
+    //   );
+    // }
+
+    // ✅ PayU response (UNCHANGED OUTPUT)
+    // return res.status(200).json({
+    //   payuUrl: process.env.PAYU_BASE_URL,
+    //   params: {
+    //     key: process.env.PAYU_KEY,
+    //     txnid,
+    //     amount: amountUSD,
+    //     currency: "USD",
+    //     productinfo: "USD_Payment",
+    //     firstname,
+    //     email,
+    //     phone: userAddress.phone1,
+    //     surl: process.env.PAYU_SUCCESS_URL,
+    //     furl: process.env.PAYU_FAILURE_URL,
+    //     hash
+    //   }
+    // });
+
+    // Create PayPal Order
+    // let request = new paypal.orders.OrdersCreateRequest();
+    // request.prefer("return=representation");
+
+    // request.requestBody({
+    //   intent: "CAPTURE",
+    //   purchase_units: [
+    //     {
+    //       amount: {
+    //         currency_code: "USD",
+    //         value: amountUSD,
+    //       },
+    //     },
+    //   ],
+    //   application_context: {
+    //     return_url: `${process.env.BACKEND_URL}/paypal/success`,
+    //     cancel_url: `${process.env.BACKEND_URL}/paypal/cancel`,
+    //     brand_name: "Abdullah Islamic Store",
+    //     user_action: "PAY_NOW",
+    //   },
+    // });
+
+    // const paypalOrder = await paypalClient.execute(request);
+
+    // PayPal order id
+    // const paypalOrderId = paypalOrder.result.id;
     // ✅ Create main order
+    const orderId = v4()
     await Orders.create({
       order_id: orderId,
       user_id: decode_user,
@@ -163,17 +220,18 @@ export const order = async (req, res) => {
       city: userAddress.city,
       pinCode: userAddress.pinCode,
       address: userAddress.address,
-      addressType: userAddress.addressType
+      addressType: userAddress.addressType,
     });
 
     // ✅ Insert order items + reduce stock
     for (const row of productCache) {
       await OrderItems.create({
-        order_id: orderId,
+        order_id:orderId,
         product_id: row.product.product_id,
         quantity: row.quantity,
-        price: row.product.selling_price
+        price: row.product.selling_price,
       });
+    
 
       const newQty = row.product.quantity - row.quantity;
       await Products.update(
@@ -182,137 +240,53 @@ export const order = async (req, res) => {
       );
     }
 
-    // ✅ PayU response (UNCHANGED OUTPUT)
+    // Return the PayPal approval link
+    // const approval = paypalOrder.result.links.find(
+    //   (l) => l.rel === "approve"
+    // ).href;
+
     return res.status(200).json({
-      payuUrl: process.env.PAYU_BASE_URL,
-      params: {
-        key: process.env.PAYU_KEY,
-        txnid,
-        amount: amountUSD,
-        currency: "USD",
-        productinfo: "USD_Payment",
-        firstname,
-        email,
-        phone: userAddress.phone1,
-        surl: process.env.PAYU_SUCCESS_URL,
-        furl: process.env.PAYU_FAILURE_URL,
-        hash
-      }
+      Staus:true,
+      Message:"Order Created Successfully"
     });
-
   } catch (error) {
-    console.error("USD PayU Order Error:", error);
-    res.status(500).json({ message: "USD PayU order failed" });
+    console.error("Can't create order:", error);
+    res.status(500).json({ message: "Can't create order" });
   }
 };
 
-
-
-
-
-export const verifyPayment = async (req, res) => {
+export const paypalSuccess = async (req, res) => {
   try {
-    const {
-      txnid,
-      status,
-      hash,
-      mihpayid,
-      amount,
-      firstname,
-      email,
-      productinfo
-    } = req.body;
+    const { token } = req.query; // PayPal order ID
 
-    const hashString =
-      `${process.env.PAYU_SALT}|${status}|||||||||||${email}|${firstname}|${productinfo}|${amount}|${txnid}|${process.env.PAYU_KEY}`;
+    const request = new paypal.orders.OrdersCaptureRequest(token);
+    request.requestBody({});
 
-    const expectedHash = crypto
-      .createHash("sha512")
-      .update(hashString)
-      .digest("hex");
+    const response = await paypalClient.execute(request);
 
-    if (hash !== expectedHash) {
-      console.log("Hash Mismatch");
-      console.log("PayU Hash:", hash);
-      console.log("Our Hash:", expectedHash);
-      return res.status(400).json({ message: "Hash mismatch" });
-    }
+    const orderId = token;
 
-    // Find the order using the transaction ID
-    const orderId = txnid.replace('USD_', '');
-    const order = await Orders.findOne({ where: { order_id: orderId } });
-
-    if (!order) return res.status(404).json({ message: "Order not found" });
-
-    if (status === "success") {
-      await Orders.update(
-        {
-          payment_status: "paid",
-          status:"confirm",
-          payu_payment_id: mihpayid
-        },
-        { where: { order_id: orderId } }
-      );
-    } else {
-      await Orders.update(
-        { payment_status: "failed" },
-        { where: { order_id: orderId } }
-      );
-    }
-
-    // Redirect to frontend order success page with the actual order ID
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const redirectUrl = `${frontendUrl}/order-success?orderId=${order.order_id}`;
-    return res.redirect(redirectUrl);
-
-  } catch (err) {
-    console.error("PayU verify error:", err);
-    res.status(500).json({ message: "Verification failed" });
-  }
-};
-
-
-export const payuFailure = async (req, res) => {
-  try {
-    const {
-      txnid,
-      status,
-      hash,
-      amount,
-      firstname,
-      email,
-      productinfo
-    } = req.body;
-
-    // console.log("PayU Failure Callback Body:", req.body);
-
-    // ✅ Just log and mark order failed
-    if (!txnid) {
-      return res.status(400).json({ message: "Transaction ID missing" });
-    }
-
-    const orderId = txnid.replace("USD_", "");
-
-    // Update order status
     await Orders.update(
-      { payment_status: "failed" },
+      {
+        payment_status: "paid",
+        status: "confirm",
+        payu_payment_id: response.result.id,
+      },
       { where: { order_id: orderId } }
     );
 
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-
-    // Redirect user to frontend failure page
-    const redirectUrl = `${frontendUrl}/payment-failed?orderId=${orderId}`;
-    return res.redirect(redirectUrl);
-
+    const frontend = process.env.FRONTEND_URL;
+    return res.redirect(`${frontend}/order-success?orderId=${orderId}`);
   } catch (error) {
-    console.error("PayU Failure Error:", error);
-    return res.status(500).json({ message: "PayU failure handler error" });
+    console.error("Paypal success handler error:", error);
+    return res.status(500).json({ message: "Paypal verification failed" });
   }
 };
 
-
-
+export const paypalCancel = async (req, res) => {
+  const frontend = process.env.FRONTEND_URL;
+  return res.redirect(`${frontend}/payment-failed`);
+};
 
 const createAddress = async (req, res) => {
   const {
@@ -329,16 +303,20 @@ const createAddress = async (req, res) => {
   } = req.body;
 
   if (!decode_user) {
-    return res.status(400).json({ status: false, message: "User not authenticated" });
+    return res
+      .status(400)
+      .json({ status: false, message: "User not authenticated" });
   }
 
   // Validate that the user actually exists in the database
   const userExists = await User.findOne({
-    where: { id: decode_user }
+    where: { id: decode_user },
   });
 
   if (!userExists) {
-    return res.status(400).json({ status: false, message: "User not found in database" });
+    return res
+      .status(400)
+      .json({ status: false, message: "User not found in database" });
   }
 
   try {
@@ -403,21 +381,21 @@ const createAddress = async (req, res) => {
     console.error(error);
 
     // Handle specific database errors
-    if (error.name === 'SequelizeUniqueConstraintError') {
+    if (error.name === "SequelizeUniqueConstraintError") {
       // Check which field caused the unique constraint error
       const errors = error.errors || [];
       for (const err of errors) {
-        if (err.field === 'phone1') {
+        if (err.field === "phone1") {
           return res.status(400).json({
             status: false,
-            message: "An address with this phone number already exists."
+            message: "An address with this phone number already exists.",
           });
         }
       }
       // If we can't identify the specific field, return a generic message
       return res.status(400).json({
         status: false,
-        message: "An address with this phone number already exists."
+        message: "An address with this phone number already exists.",
       });
     }
 
@@ -429,7 +407,9 @@ const getUserProfile = async (req, res) => {
   const { decode_user } = req.body;
 
   if (!decode_user) {
-    return res.status(400).json({ status: false, message: "User not authenticated" });
+    return res
+      .status(400)
+      .json({ status: false, message: "User not authenticated" });
   }
 
   const user_data = await User.findOne({
@@ -454,7 +434,6 @@ const getUserProfile = async (req, res) => {
     ],
   });
 
-
   if (!user_data) {
     return res.status(400).json({ status: false, message: "No user found" });
   }
@@ -463,7 +442,7 @@ const getUserProfile = async (req, res) => {
   const response_data = {
     id: user_data.id,
     email: user_data.email,
-    Addresses: user_data.Addresses || []
+    Addresses: user_data.Addresses || [],
   };
 
   res.status(200).json({ status: true, data: response_data });
@@ -486,24 +465,29 @@ const getOrders = async (req, res) => {
           include: [
             {
               model: Products,
-              attributes: ["product_id", "name", "price", "selling_price", "product_image"]
-            }
-          ]
-        }
-      ]
+              attributes: [
+                "product_id",
+                "name",
+                "price",
+                "selling_price",
+                "product_image",
+              ],
+            },
+          ],
+        },
+      ],
     });
 
-    const ordersWithPaymentInfo = orders.map(order => ({
+    const ordersWithPaymentInfo = orders.map((order) => ({
       ...order.toJSON(),
-      payment_method: "PayU",
-      payu_transaction_id: order.payu_payment_id || null
+      payment_method: "Paypal",
+      payu_transaction_id: order.payu_payment_id || null,
     }));
 
     return res.status(200).json({
       status: true,
-      orders: ordersWithPaymentInfo
+      orders: ordersWithPaymentInfo,
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Something went wrong" });
@@ -548,7 +532,7 @@ export const cancelOrder = async (req, res) => {
     }
 
     const order = await Orders.findOne({
-      where: { order_id: order_id, user_id: user_id }
+      where: { order_id: order_id, user_id: user_id },
     });
 
     if (!order) {
@@ -557,18 +541,22 @@ export const cancelOrder = async (req, res) => {
 
     await order.update({ status: "cancelled" });
     return res.status(200).json({ message: "Order cancelled successfully" });
-
   } catch (error) {
     console.error("Error cancelling order:", error);
-    res.status(500).json({ message: "Something went wrong cancelling order", error: error.message });
+    res
+      .status(500)
+      .json({
+        message: "Something went wrong cancelling order",
+        error: error.message,
+      });
   }
-}
+};
 
 const getUserAddresess = async (req, res) => {
   const { decode_user } = req.body;
   if (!decode_user) {
     return res
-      .status(402)
+      .status(401)
       .json({ message: "Can't fetch User Address please login first" });
   }
 
@@ -593,15 +581,15 @@ export const addToCart = async (req, res) => {
     const existingCartItem = await AddToCart.findOne({
       where: {
         user_id: user_id,
-        product_id: product_id
-      }
+        product_id: product_id,
+      },
     });
 
     let cartItem;
     if (existingCartItem) {
       // Update the existing item's quantity
       cartItem = await existingCartItem.update({
-        quantity: quantity
+        quantity: quantity,
       });
     } else {
       // Create a new cart item
@@ -627,7 +615,13 @@ export const getUserCart = async (req, res) => {
       include: [
         {
           model: Products,
-          attributes: ["title", "price", "selling_price", "product_id", "product_image"],
+          attributes: [
+            "title",
+            "price",
+            "selling_price",
+            "product_id",
+            "product_image",
+          ],
         },
       ],
     });
@@ -677,14 +671,14 @@ export const updateCartItem = async (req, res) => {
     const existingCartItem = await AddToCart.findOne({
       where: {
         user_id: user_id,
-        product_id: product_id
-      }
+        product_id: product_id,
+      },
     });
 
     if (existingCartItem) {
       // Update the existing item's quantity
       const updatedItem = await existingCartItem.update({
-        quantity: quantity
+        quantity: quantity,
       });
       return res.json({ message: "Cart item updated", cartItem: updatedItem });
     } else {
@@ -732,7 +726,7 @@ export const removeFromCartByProductId = async (req, res) => {
     await AddToCart.destroy({
       where: {
         user_id: user_id,
-        product_id: product_id
+        product_id: product_id,
       },
     });
 
@@ -769,56 +763,149 @@ export const updateUserAddress = async (req, res) => {
   } = req.body;
 
   if (!decode_user) {
-    return res.status(400).json({ status: false, message: "User not authenticated" });
+    return res
+      .status(400)
+      .json({ status: false, message: "User not authenticated" });
   }
 
   // Verify that the address belongs to the user
   const addressRecord = await Addresses.findOne({
-    where: { id: address_id, user_id: decode_user }
+    where: { id: address_id, user_id: decode_user },
   });
 
   if (!addressRecord) {
     return res
       .status(400)
-      .json({ status: false, message: "Address not found or does not belong to user" });
+      .json({
+        status: false,
+        message: "Address not found or does not belong to user",
+      });
   }
 
   try {
-    const updatedAddress = await Addresses.update({
-      FullName,
-      phone1,
-      phone2: phone2 || null,
-      state,
-      city,
-      pinCode,
-      country,
-      address,
-      addressType,
-    }, { where: { id: address_id } });
+    const updatedAddress = await Addresses.update(
+      {
+        FullName,
+        phone1,
+        phone2: phone2 || null,
+        state,
+        city,
+        pinCode,
+        country,
+        address,
+        addressType,
+      },
+      { where: { id: address_id } }
+    );
 
     res.status(200).json({ status: true, updatedAddress });
   } catch (error) {
-    console.error('Error updating address:', error);
+    console.error("Error updating address:", error);
 
     // Handle specific database errors
-    if (error.name === 'SequelizeUniqueConstraintError') {
+    if (error.name === "SequelizeUniqueConstraintError") {
       // Check which field caused the unique constraint error
       const errors = error.errors || [];
       for (const err of errors) {
-        if (err.field === 'phone1') {
+        if (err.field === "phone1") {
           return res.status(400).json({
             status: false,
-            message: "An address with this phone number already exists."
+            message: "An address with this phone number already exists.",
           });
         }
       }
       // If we can't identify the specific field, return a generic message
       return res.status(400).json({
         status: false,
-        message: "An address with this phone number already exists."
+        message: "An address with this phone number already exists.",
       });
     }
 
-    return res.status(500).json({ status: false, message: "Failed to update address" });
+    return res
+      .status(500)
+      .json({ status: false, message: "Failed to update address" });
   }
 };
+
+export const addProductReviews = async (req, res) => {
+  try {
+    const { user_name, review_title, review_text, review_rate, product_id } =
+    req.body;
+  const reviewImage = req.files || [];
+
+  
+
+  if (
+    !user_name ||
+    !review_title ||
+    !review_text ||
+    !review_rate ||
+    !product_id
+  ) {
+    return res.status(404).json({ Message: "All Fields are required" });
+  }
+
+  //If no review image then upload data only
+  if (reviewImage.length === 0) {    
+    await ProductReviews.create({
+      user_name,
+      review_text,
+      review_title,
+      review_rate,
+      product_id,
+    });
+    return  res.status(200).json({message:'Prodcut review add successfully'})
+  }
+
+  const filePath = `product-images/${v4()}-${reviewImage.originalname}`;
+  const { data, error } = await supabase.storage
+    .from("products")
+    .upload(filePath, reviewImage.buffer, { contentType: reviewImage.mimetype });
+
+  if (error)
+    throw new Error(
+      "Supabase upload failed: " + (error.message || JSON.stringify(error))
+    );
+
+  const { data: publicUrlData } = supabase.storage
+    .from("products")
+    .getPublicUrl(data.path);
+
+    // console.log(publicUrlData.publicUrl);
+    
+
+  await ProductReviews.create({
+    user_name,
+    review_text,
+    review_title,
+    review_rate,
+    product_id,
+    review_image: publicUrlData.publicUrl,
+  });
+
+  return res.status(200).json({status:true,Message:"Add review successfull"})
+    
+  } catch (error) {
+
+    console.error(error);
+    return res.status(500).json({Message:"something went wrong"})
+    
+    
+  }
+};
+
+export const getProductReviews = async (req,res) =>{
+   try {
+    const {product_id} = req.params;
+     const result = await ProductReviews.findAll({
+      where:{product_id}
+     });
+
+     res.status(200).json({staus:true,reviews:result})
+
+   } catch (error) {
+    console.error(error);
+    return res.status(500).json({Message:"something went wrong"})    
+    
+   }
+}

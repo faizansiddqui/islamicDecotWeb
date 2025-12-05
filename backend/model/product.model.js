@@ -35,6 +35,10 @@ const Products = connection.define("Products", {
   description: {
     type: DataTypes.TEXT,
   },
+  selling_price_link:{
+    type:DataTypes.STRING,
+    allowNull:false
+  },
   product_image: {
     type: DataTypes.JSON,
     allowNull: false,

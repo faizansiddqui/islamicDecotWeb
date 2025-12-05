@@ -1,11 +1,13 @@
 const otpStore = (() => {
   const store = new Map(); // memory store
 
-  function setOTP(email, otp) {
+  function setOTP(email, otp) {  
     store.set(email, {
       otp,
       expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
     });
+    
+
   }
 
   function verifyOTP(email, otp) {

@@ -6,14 +6,13 @@ import { router as userRouter } from './router/user.router.js';
 import {router as authRouter} from './router/auth.router.js'
 import cors from "cors";
 
-app.set("trust proxy", 1);
-
 app.use(cors({
-  origin:process.env.FRONTEND_URL,
-  credentials:true,
-}))
+  origin: process.env.FRONTEND_URL,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
-app.options(/.*/, cors());
 
 
 

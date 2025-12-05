@@ -38,7 +38,9 @@ export const varifyEmail = async (req, res) => {
     }
 
     // Verify OTP from closure store
-    const isValid = otpStore.verifyOTP(email, otp);
+   const normalizedEmail = email.trim().toLowerCase();
+const isValid = otpStore.verifyOTP(normalizedEmail, otp.trim());
+
 
     if (!isValid) {
       return res.status(401).json({ message: "Invalid or expired OTP" });
@@ -165,7 +167,7 @@ export const login = async (req, res) => {
 
      const otp = generateOTP();
 
-    otpStore.setOTP(email, otp); // closure store
+   otpStore.setOTP(email.trim().toLowerCase(), otp); // closure store
 
   await resend.emails.send({
   from: 'Website <no-reply@kiswahmakkahstore.com>', // ✅ domain email use karo
