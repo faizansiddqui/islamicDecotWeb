@@ -31,6 +31,10 @@ export const Orders = connection.define("Orders", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+   country: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
   pinCode: {
     type: DataTypes.STRING,
     allowNull: false,

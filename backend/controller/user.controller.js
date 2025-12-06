@@ -1,7 +1,4 @@
 //user controller
-
-import paypal from "@paypal/checkout-server-sdk";
-import paypalClient from "../config/payPal.js";
 import { Catagories } from "../model/catagory.model.js";
 import { Products, ProductSpecification } from "../model/product.model.js";
 import { Orders } from "../model/orders.model.js";
@@ -115,7 +112,7 @@ export const order = async (req, res) => {
     for (const item of items) {
       const product = await Products.findOne({
         where: { product_id: item.product_id },
-        attributes: ["selling_price", "quantity", "product_id"],
+        attributes: ["selling_price", "quantity", "product_id", "selling_price_link"],
       });
 
       if (!product || product.quantity < item.quantity) {
@@ -217,6 +214,7 @@ export const order = async (req, res) => {
       phone1: userAddress.phone1,
       phone2: userAddress.phone2,
       state: userAddress.state,
+      country:userAddress.country,
       city: userAddress.city,
       pinCode: userAddress.pinCode,
       address: userAddress.address,
@@ -233,11 +231,7 @@ export const order = async (req, res) => {
       });
     
 
-      const newQty = row.product.quantity - row.quantity;
-      await Products.update(
-        { quantity: newQty },
-        { where: { product_id: row.product.product_id } }
-      );
+ 
     }
 
     // Return the PayPal approval link
@@ -245,9 +239,15 @@ export const order = async (req, res) => {
     //   (l) => l.rel === "approve"
     // ).href;
 
+    const sellingPriceLinks = productCache.map(item => ({
+      product_id: item.product.product_id,
+      selling_price_link: item.product.selling_price_link
+    }))
+
     return res.status(200).json({
-      Staus:true,
-      Message:"Order Created Successfully"
+      Status:true,
+      Message:"Order Created Successfully",
+      sellingPriceLinks: sellingPriceLinks
     });
   } catch (error) {
     console.error("Can't create order:", error);
@@ -336,17 +336,7 @@ const createAddress = async (req, res) => {
       });
     }
 
-    //  2. Pin code validation (Indian 6-digit)
-    if (!/^\d{6}$/.test(pinCode)) {
-      return res.status(400).json({ error: "Invalid pin code format." });
-    }
 
-    // 3. Alternative phone validation (if provided)
-    if (alt_Phone && !/^\d{10}$/.test(alt_Phone)) {
-      return res
-        .status(400)
-        .json({ error: "Invalid alternative phone number." });
-    }
 
     // 4. Address validation
     if (address.length < 8) {

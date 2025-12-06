@@ -1,7 +1,7 @@
 import { Catagories } from "../model/catagory.model.js";
 import { Products, ProductSpecification } from "../model/product.model.js";
 import { supabase } from "../config/supabase.config.js";
-import { connection } from "../config/db.js"
+import { connection } from "../config/db.js";
 import { v4 as uuidv4 } from "uuid";
 import Orders from "../model/orders.model.js";
 import { OrderItems } from "../model/orderItem.model.js";
@@ -35,7 +35,7 @@ import Addresses from "../model/addresses.model.js";
 const addCatagory = async (req, res) => {
   const { name } = req.body;
 
-  if (!name) return res.json({ err: "no data recieve" })
+  if (!name) return res.json({ err: "no data recieve" });
 
   try {
     const result = await Catagories.create({
@@ -43,12 +43,7 @@ const addCatagory = async (req, res) => {
     });
 
     res.send(result);
-
-  } catch (error) {
-
-
-  }
-
+  } catch (error) {}
 };
 
 // controller
@@ -56,8 +51,18 @@ const uploadProduct = async (req, res) => {
   const transaction = await connection.transaction();
   try {
     const files = req.files || [];
-    const { name, title, price, quantity, sku, description, catagory, specification, selling_price,selling_price_link } = req.body;
-
+    const {
+      name,
+      title,
+      price,
+      quantity,
+      sku,
+      description,
+      catagory,
+      specification,
+      selling_price,
+      selling_price_link,
+    } = req.body;
 
     // parse specs (same as before)
     let specsArr = [];
@@ -67,8 +72,12 @@ const uploadProduct = async (req, res) => {
     }
 
     // Validate files count
-    if (!files.length) return res.status(400).json({ message: "At least one image is required." });
-    if (files.length > 5) return res.status(400).json({ message: "Maximum 5 images allowed." });
+    if (!files.length)
+      return res
+        .status(400)
+        .json({ message: "At least one image is required." });
+    if (files.length > 5)
+      return res.status(400).json({ message: "Maximum 5 images allowed." });
 
     // Find or create category
     // console.log(`🔵 Looking for category: "${catagory}"`);
@@ -79,7 +88,9 @@ const uploadProduct = async (req, res) => {
     if (!result) {
       // Category doesn't exist, create it
       // console.log(`⚠️ Category "${catagory}" not found, creating it...`);
-      return res.status(404).json({status:false,Message:"Category not found"})
+      return res
+        .status(404)
+        .json({ status: false, Message: "Category not found" });
       // try {
       //   result = await Catagories.create({
       //     name: catagory,
@@ -90,12 +101,8 @@ const uploadProduct = async (req, res) => {
       //   await transaction.rollback();
       //   return res.status(500).json({ message: "Failed to create category", error: createError.message });
       // }
-    } 
+    }
     const catagory_id = result.id;
-
-
-
-
 
     // Upload each file to Supabase and collect public URLs
     const uploadedImageUrls = [];
@@ -105,7 +112,10 @@ const uploadProduct = async (req, res) => {
         .from("products")
         .upload(filePath, file.buffer, { contentType: file.mimetype });
 
-      if (error) throw new Error("Supabase upload failed: " + (error.message || JSON.stringify(error)));
+      if (error)
+        throw new Error(
+          "Supabase upload failed: " + (error.message || JSON.stringify(error))
+        );
 
       const { data: publicUrlData } = supabase.storage
         .from("products")
@@ -120,21 +130,23 @@ const uploadProduct = async (req, res) => {
 
     // let imageurl = {...uploadedImageUrls}
 
-    let imageUrl = { ...uploadedImageUrls }
+    let imageUrl = { ...uploadedImageUrls };
 
-
-    const newProduct = await Products.create({
-      title,
-      name,
-      price: Number(price),
-      product_image: imageUrl, //all images url in json form 
-      description,
-      selling_price: Number(selling_price),
-      catagory_id: catagory_id,
-      quantity: quantity,
-      sku: sku,
-      selling_price_link:selling_price_link
-    }, { transaction });
+    const newProduct = await Products.create(
+      {
+        title,
+        name,
+        price: Number(price),
+        product_image: imageUrl, //all images url in json form
+        description,
+        selling_price: Number(selling_price),
+        catagory_id: catagory_id,
+        quantity: quantity,
+        sku: sku,
+        selling_price_link: selling_price_link,
+      },
+      { transaction }
+    );
 
     const productId = newProduct.product_id;
     if (specsArr.length > 0) {
@@ -142,10 +154,10 @@ const uploadProduct = async (req, res) => {
         ...s,
         product_id: productId,
       }));
-      await ProductSpecification.bulkCreate(specsWithProductId, { transaction });
+      await ProductSpecification.bulkCreate(specsWithProductId, {
+        transaction,
+      });
     }
-
-
 
     // Insert ProductImages rows
     // const imageRows = uploadedImageUrls.map((url) => ({
@@ -162,15 +174,17 @@ const uploadProduct = async (req, res) => {
       product: newProduct,
       images: uploadedImageUrls,
     });
-
   } catch (error) {
     console.error("Server error:", error);
     if (transaction) await transaction.rollback();
-    res.status(500).json({ message: "Something went wrong on the server.", error: error.message });
+    res
+      .status(500)
+      .json({
+        message: "Something went wrong on the server.",
+        error: error.message,
+      });
   }
 };
-
-
 
 const getOrders = async (req, res) => {
   try {
@@ -181,18 +195,17 @@ const getOrders = async (req, res) => {
           as: "items",
           include: [
             {
-              model: Products
-            }
-          ]
-        }
-      ]
+              model: Products,
+            },
+          ],
+        },
+      ],
     });
 
-    const ordersWithPaymentInfo = data.map(order => {
+    const ordersWithPaymentInfo = data.map((order) => {
       return {
         ...order.toJSON(),
-        payment_method: "PayU",
-        payu_transaction_id: order.payu_payment_id || null
+        payment_method: "Payoneer",
       };
     });
 
@@ -202,14 +215,13 @@ const getOrders = async (req, res) => {
 
     res.status(200).json({
       status: true,
-      orders: ordersWithPaymentInfo
+      orders: ordersWithPaymentInfo,
     });
-
   } catch (error) {
     console.error("Error fetching orders:", error);
     res.status(500).json({
       message: "Something went wrong",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -241,30 +253,94 @@ const getOrders = async (req, res) => {
 // };
 
 const updateOrderStatus = async (req, res) => {
+  const { status, order_id, product_id } = req.body; // Destructure outside for clarity
+  
+  // 1. Initial Validation
+  if (!status || !order_id) {
+    return res.status(400).json({ message: "Required fields missing: status or order_id." });
+  }
+
+  // Use a transaction for atomic updates to prevent race conditions
+  const t = await connection.transaction(); 
+
   try {
-    const { status, order_id} = req.body;
+    if (status === "confirm") {
+        
+      if (!product_id) {
+        // Only product_id is required for a 'confirm' status
+        await t.rollback();
+        return res.status(400).json({ message: "product_id is required for status 'confirm'." });
+      }
 
-    // Validate
-    if (!status || !order_id ) {
-      return res.status(400).json({ message: "Status or Order ID missing" });
-    }
+      // 2. Fetch the specific ordered item quantity (scoped to order and product)
+      const orderItem = await OrderItems.findOne({
+        where: { order_id: order_id, product_id: product_id },
+        attributes: ["quantity"],
+        transaction: t, 
+      });
 
-    // Update in database
-    const [updated] = await Orders.update(
-      { status: status },
-      { where: { order_id: order_id } }
-    );
+      if (!orderItem) {
+        await t.rollback();
+        return res.status(404).json({ message: "Product not found in this order." });
+      }
 
+      const quantityToDeduct = orderItem.quantity;
 
+      // 3. Fetch product quantity and perform stock check/reduction
      
+      const product = await Products.findByPk(parseInt(product_id), {
+        attributes: ["quantity"],
+        transaction: t, // MUST run this query inside the transaction
+      });
 
-    if (updated === 0) {
-      return res.status(404).json({ message: "Order not found" });
+      if (!product || product.quantity < quantityToDeduct) {
+        await t.rollback();
+        return res.status(400).json({ 
+          status: false,
+          message: "Insufficient stock to confirm this quantity." 
+        });
+      }
+      
+      const newQty = product.quantity - quantityToDeduct;
+
+      // 4. Update product quantity (inside transaction)
+      await Products.update(
+        { quantity: newQty },
+        { where: { product_id: product_id }, transaction: t }
+      );
+
+      // 5. Update order status and payment status (inside transaction)
+      const [updatedOrder] = await Orders.update(
+        { status: status, payment_status: "paid" },
+        { where: { order_id: order_id }, transaction: t }
+      );
+
+      if (updatedOrder === 0) {
+        await t.rollback();
+        return res.status(404).json({ message: "Order not found or already updated." });
+      }
+
+    } else {
+      // Logic for non-confirm statuses (e.g., 'shipped', 'cancelled')
+      const [updated] = await Orders.update(
+        { status: status },
+        { where: { order_id: order_id }, transaction: t }
+      );
+
+      if (updated === 0) {
+        await t.rollback();
+        return res.status(404).json({ message: "Order not found" });
+      }
     }
+
+    // Commit the transaction only if all steps succeeded
+    await t.commit(); 
 
     return res.status(200).json({ message: "Order status updated successfully" });
 
   } catch (error) {
+    // If any step failed, rollback the transaction
+    await t.rollback(); 
     console.error("Error updating order:", error);
     res.status(500).json({ message: "Server error" });
   }
@@ -273,7 +349,7 @@ const updateOrderStatus = async (req, res) => {
 const login = (req, res) => {
   const { userName, password } = req.body;
   if (!userName || !password) {
-    return res.status(400).json({ msg: "userName and Password required" })
+    return res.status(400).json({ msg: "userName and Password required" });
   }
 
   const checkUserName = process.env.ADMIN_USERNAME;
@@ -281,9 +357,9 @@ const login = (req, res) => {
   if (checkUserName === userName && checkPassword === password) {
     return res.status(200).json({ status: true, msg: "Login successfull" });
   } else {
-    return res.status(401).json({ status: false, msg: "Can't login" })
+    return res.status(401).json({ status: false, msg: "Can't login" });
   }
-}
+};
 
 // const updateProduct = async (req, res) => {
 //   try {
@@ -332,7 +408,6 @@ const updateProduct = async (req, res) => {
   try {
     const { product_id } = req.params;
     const files = req.files || [];
-     
 
     const {
       name,
@@ -344,19 +419,25 @@ const updateProduct = async (req, res) => {
       catagory,
       specification,
       selling_price,
-      selling_price_link
+      selling_price_link,
     } = req.body;
 
     // 1️⃣ Find product
     const product = await Products.findByPk(product_id);
     if (!product) {
-      return res.status(404).json({ status: false, message: "Product not found" });
+      return res
+        .status(404)
+        .json({ status: false, message: "Product not found" });
     }
 
     // 2️⃣ Validate category
-    const categoryData = await Catagories.findOne({ where: { name: catagory } });
+    const categoryData = await Catagories.findOne({
+      where: { name: catagory },
+    });
     if (!categoryData) {
-      return res.status(404).json({ status: false, message: "Category not found" });
+      return res
+        .status(404)
+        .json({ status: false, message: "Category not found" });
     }
 
     // 3️⃣ Parse specifications
@@ -378,7 +459,9 @@ const updateProduct = async (req, res) => {
       const oldImages = Object.values(product.product_image);
       for (const imgUrl of oldImages) {
         const filePath = decodeURIComponent(imgUrl.split("/products/")[1]);
-        await supabase.storage.from("products").remove([`product-images/${filePath}`]);
+        await supabase.storage
+          .from("products")
+          .remove([`product-images/${filePath}`]);
       }
 
       // Upload new images
@@ -402,123 +485,120 @@ const updateProduct = async (req, res) => {
     }
 
     // 5️⃣ Update Product
-    await product.update({
-      title,
-      name,
-      price: Number(price),
-      quantity,
-      sku,
-      description,
-      selling_price: Number(selling_price),
-      catagory_id: categoryData.id,
-      selling_price_link,
-      product_image: finalImages
-    }, { transaction });
+    await product.update(
+      {
+        title,
+        name,
+        price: Number(price),
+        quantity,
+        sku,
+        description,
+        selling_price: Number(selling_price),
+        catagory_id: categoryData.id,
+        selling_price_link,
+        product_image: finalImages,
+      },
+      { transaction }
+    );
 
     // 6️⃣ Update Specifications
-    await ProductSpecification.destroy({ where: { product_id } }, { transaction });
+    await ProductSpecification.destroy(
+      { where: { product_id } },
+      { transaction }
+    );
 
     if (specsArr.length > 0) {
-      const specsWithId = specsArr.map(s => ({ ...s, product_id }));
+      const specsWithId = specsArr.map((s) => ({ ...s, product_id }));
       await ProductSpecification.bulkCreate(specsWithId, { transaction });
     }
 
     await transaction.commit();
-    res.status(200).json({ status: true, message: "Product updated successfully", product });
-
+    res
+      .status(200)
+      .json({ status: true, message: "Product updated successfully", product });
   } catch (error) {
     console.error("Error updating full product:", error);
     await transaction.rollback();
-    res.status(500).json({ status: false, message: "Server error", error: error.message });
+    res
+      .status(500)
+      .json({ status: false, message: "Server error", error: error.message });
   }
 };
-
 
 const getProducts = async (req, res) => {
   try {
     const products = await Products.findAll({
-      include: [{
-        model: Catagories,
-        attributes: ['id', 'name'],
-        required: false // Left join - include products even if category is missing
-      }],
-      order: [['product_id', 'DESC']]
+      include: [
+        {
+          model: Catagories,
+          attributes: ["id", "name"],
+          required: false, // Left join - include products even if category is missing
+        },
+      ],
+      order: [["product_id", "DESC"]],
     });
     res.status(200).json({ status: true, products: products });
   } catch (error) {
-    console.error('❌ Error fetching products:', error);
-    res.status(500).json({ message: "Failed to fetch products", error: error.message });
+    console.error("❌ Error fetching products:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch products", error: error.message });
   }
 };
 
-export const deleteProduct = async (req,res)=>{
- try {
-   const {productId} = req.body; 
-   
-   
-  if(!productId) return res.status(404).json({status:false,Message:"Cant not remove product."});
+export const deleteProduct = async (req, res) => {
+  try {
+    const { productId } = req.body;
 
-  const {product_image} = await Products.findOne({
-    where:{product_id:productId},
-    attributes:['product_image']
-  });
+    if (!productId)
+      return res
+        .status(404)
+        .json({ status: false, Message: "Cant not remove product." });
 
-  const imagesEntries = Object.entries(product_image);
-  let imageName = null;
- for (const [key, imageUrl] of imagesEntries) { 
+    const { product_image } = await Products.findOne({
+      where: { product_id: productId },
+      attributes: ["product_image"],
+    });
 
-   imageName = decodeURIComponent(imageUrl.split("/").pop());
+    const imagesEntries = Object.entries(product_image);
+    let imageName = null;
+    for (const [key, imageUrl] of imagesEntries) {
+      imageName = decodeURIComponent(imageUrl.split("/").pop());
 
-   console.log(`image name : ${imageName}`);
-   
-  
-  const { error } = await supabase.storage
-    .from("products")
-    .remove([`product-images/${imageName}`]);
+      console.log(`image name : ${imageName}`);
 
-  if (error) {
-    console.log("Error removing:", imageUrl, error);
-  } else {
-    console.log("Removed:", imageUrl);
+      const { error } = await supabase.storage
+        .from("products")
+        .remove([`product-images/${imageName}`]);
+
+      if (error) {
+        console.log("Error removing:", imageUrl, error);
+      } else {
+        console.log("Removed:", imageUrl);
+      }
+    }
+
+    // delete product from db
+    await Products.destroy({
+      where: { product_id: parseInt(productId) },
+    });
+
+    res
+      .status(200)
+      .json({ status: true, Message: "Product Deleted successfully" });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({ status: false, Message: "Something went wrong" });
   }
-}
-
-  
-  
-
-
-  // delete product from db
-   await Products.destroy({
-    where:{product_id:parseInt(productId)}
-  });
-
-
-  
-
-  res.status(200).json({status:true,Message:"Product Deleted successfully"})
-  
- } catch (error) {
-      console.error(error);
-      
-     res.status(500).json({status:false,Message:"Something went wrong"})
-  
- }
-
-
-
-
-}
-
-
-
+};
 
 export {
   getProducts,
   updateProduct,
   addCatagory,
   uploadProduct,
-
   login,
   getOrders,
-  updateOrderStatus
+  updateOrderStatus,
 };
